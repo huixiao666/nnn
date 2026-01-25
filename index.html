@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sing-box 配置自动生成器 (1.13.0-beta)</title>
+    <style>
+        :root {
+            --bg-color: #1e1e1e;
+            --text-color: #d4d4d4;
+            --accent-color: #007acc;
+            --secondary-bg: #252526;
+            --border-color: #3e3e42;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100%;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            text-align: center;
+            color: #fff;
+        }
+
+        .panels {
+            display: flex;
+            gap: 20px;
+            flex: 1;
+            min-height: 0; /* Important for scroll */
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--secondary-bg);
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        .panel-header {
+            font-weight: bold;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        textarea {
+            flex: 1;
+            background-color: #1e1e1e;
+            color: #9cdcfe;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 10px;
+            resize: none;
+            font-family: 'Consolas', 'Courier New', monospace;
+            font-size: 12px;
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: var(--accent-color);
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: #005f9e;
+        }
+
+        button.secondary {
+            background-color: #3e3e42;
+        }
+        
+        button.secondary:hover {
+            background-color: #505055;
+        }
+
+        @media (max-width: 768px) {
+            .panels {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Sing-box 自动配置生成器 (模板适配版)</h1>
+        
+        <div class="panels">
+            <div class="panel">
+                <div class="panel-header">
+                    <span>输入节点 (每行一个 vless://)</span>
+                    <button class="secondary" onclick="clearInput()">清空</button>
+                </div>
+                <textarea id="inputNodes" placeholder="在此粘贴 vless://... 链接&#10;支持多行输入"></textarea>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <span>生成结果 (JSON)</span>
+                    <button class="secondary" onclick="copyResult()">复制配置</button>
+                </div>
+                <textarea id="outputConfig" readonly placeholder="点击“生成配置”后在此显示结果..."></textarea>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="generateConfig()">⚡ 生成配置</button>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. 内置模板 (基于提供的 1.txt) ---
+        const baseTemplate = {
+            "log": { "level": "warn", "timestamp": true },
+            "dns": {
+                "servers": [
+                    { "tag": "dns_local", "type": "udp", "server": "223.5.5.5" },
+                    { "tag": "dns_google", "type": "udp", "server": "8.8.8.8", "detour": "proxy" },
+                    { "tag": "dns_fakeip", "type": "fakeip", "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" }
+                ],
+                "rules": [
+                    { "clash_mode": "Direct", "server": "dns_local" },
+                    { "clash_mode": "Global", "server": "dns_fakeip" },
+                    { "rule_set": "geosite_cn", "server": "dns_local" },
+                    { "rule_set": ["geosite_google", "geosite_youtube", "geosite_netflix", "geosite_telegram", "geosite_geolocation_non_cn"], "server": "dns_fakeip" }
+                ],
+                "final": "dns_google",
+                "independent_cache": true
+            },
+            "inbounds": [
+                {
+                    "type": "tun", "tag": "tun-in", "address": ["172.19.0.1/30", "fd00::1/126"], "mtu": 1500,
+                    "auto_route": true, "strict_route": true, "stack": "mixed", "sniff": true, "sniff_override_destination": false,
+                    "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 7890 } }
+                },
+                { "type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 7890, "sniff": true, "sniff_override_destination": false }
+            ],
+            "outbounds": [], // 这里我们将动态生成，只保留静态部分
+            "route": {
+                "rules": [
+                    { "port": 853, "action": "reject" },
+                    { "protocol": "quic", "action": "reject" },
+                    { "protocol": "dns", "action": "hijack-dns" },
+                    { "port": 53, "action": "hijack-dns" },
+                    { "rule_set": "geosite_telegram", "action": "route", "outbound": "telegram" },
+                    { "rule_set": "geoip_telegram", "action": "route", "outbound": "telegram" },
+                    { "action": "sniff", "sniffer": ["http", "tls", "quic", "dns"], "timeout": "500ms" },
+                    { "clash_mode": "Direct", "action": "route", "outbound": "DIRECT" },
+                    { "clash_mode": "Global", "action": "route", "outbound": "GLOBAL" },
+                    { "ip_is_private": true, "action": "route", "outbound": "DIRECT" },
+                    { "rule_set": "geosite_cn", "action": "route", "outbound": "DIRECT" },
+                    { "rule_set": "geosite_bilibili", "action": "route", "outbound": "bilibili" },
+                    { "rule_set": "geosite_apple", "action": "route", "outbound": "apple" },
+                    { "rule_set": ["geosite_ads", "geosite_adguard"], "action": "reject" },
+                    { "rule_set": "geosite_google", "action": "route", "outbound": "google" },
+                    { "rule_set": "geosite_netflix", "action": "route", "outbound": "netflix" },
+                    { "rule_set": "geosite_youtube", "action": "route", "outbound": "youtube" },
+                    { "rule_set": "geosite_openai", "action": "route", "outbound": "openai" },
+                    { "rule_set": "geosite_bahamut", "action": "route", "outbound": "bahamut" },
+                    { "rule_set": "geoip_netflix", "action": "route", "outbound": "netflix" },
+                    { "rule_set": "geosite_geolocation_non_cn", "action": "route", "outbound": "proxy" },
+                    { "rule_set": "geoip_google", "action": "route", "outbound": "google" },
+                    { "rule_set": "geoip_cn", "action": "route", "outbound": "cn" }
+                ],
+                "rule_set": [
+                    { "tag": "geosite_ads", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/category-ads-all.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_adguard", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/217heidai/adblockfilters/main/rules/adblocksingbox.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_apple", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/apple.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_bahamut", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/bahamut.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_bilibili", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/bilibili.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_cn", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/cn.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_google", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/google.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_netflix", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/netflix.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_openai", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/openai.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_telegram", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/telegram.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_youtube", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/youtube.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_geolocation_non_cn", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/geolocation-!cn.srs", "download_detour": "DIRECT" },
+                    { "tag": "geoip_cn", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/cn.srs", "download_detour": "DIRECT" },
+                    { "tag": "geoip_google", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/google.srs", "download_detour": "DIRECT" },
+                    { "tag": "geoip_netflix", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/netflix.srs", "download_detour": "DIRECT" },
+                    { "tag": "geoip_telegram", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/telegram.srs", "download_detour": "DIRECT" }
+                ],
+                "final": "proxy",
+                "auto_detect_interface": true,
+                "override_android_vpn": true,
+                "default_domain_resolver": "dns_local"
+            },
+            "experimental": {
+                "cache_file": { "enabled": true, "path": "cache.db", "cache_id": "singbox", "store_fakeip": true, "store_rdrc": true },
+                "clash_api": {
+                    "external_controller": "127.0.0.1:9090",
+                    "external_ui": "ui",
+                    "external_ui_download_url": "https://ghfast.top/https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip",
+                    "external_ui_download_detour": "DIRECT",
+                    "default_mode": "rule"
+                }
+            }
+        };
+
+        // --- 2. 静态 Outbounds 定义 (Selector 组框架) ---
+        // 我们不直接使用 template 里的 outbounds，因为那里有硬编码的节点。
+        // 我们在生成时重新构建这个数组。
+        function getStaticOutbounds(proxyTags) {
+            return [
+                { "type": "direct", "tag": "DIRECT" },
+                {
+                    "type": "selector",
+                    "tag": "proxy",
+                    "outbounds": ["auto", ...proxyTags, "DIRECT"],
+                    "default": "auto",
+                    "interrupt_exist_connections": false
+                },
+                {
+                    "type": "urltest",
+                    "tag": "auto",
+                    "outbounds": proxyTags.length > 0 ? proxyTags : ["DIRECT"], // 防止空数组报错
+                    "url": "https://www.gstatic.com/generate_204",
+                    "interval": "10m",
+                    "tolerance": 50,
+                    "idle_timeout": "30m",
+                    "interrupt_exist_connections": false
+                },
+                // 分流组，全部指向 [proxy, auto, DIRECT] 逻辑
+                ...["google", "apple", "telegram", "bilibili", "netflix", "bahamut", "youtube", "openai", "GLOBAL", "cn", "final"].map(tag => ({
+                    "type": "selector",
+                    "tag": tag,
+                    "outbounds": tag === "apple" || tag === "bilibili" || tag === "cn" ? ["DIRECT", "proxy"] : (tag === "final" ? ["proxy", "DIRECT"] : ["proxy", "auto", "DIRECT"]), // 微调默认值以匹配原模板
+                    "default": tag === "apple" || tag === "bilibili" || tag === "cn" || tag === "GLOBAL" ? "DIRECT" : "proxy"
+                }))
+            ];
+        }
+
+        // --- 3. 解析器逻辑 ---
+        function parseVless(link) {
+            try {
+                const url = new URL(link);
+                const params = url.searchParams;
+                const tag = decodeURIComponent(url.hash).replace(/^#/, '') || 'Unnamed Node';
+
+                const config = {
+                    type: "vless",
+                    tag: tag,
+                    server: url.hostname,
+                    server_port: parseInt(url.port) || 443,
+                    uuid: url.username,
+                    packet_encoding: "xudp", // 模板默认配置
+                    tls: {
+                        enabled: false
+                    }
+                };
+
+                // Flow (Vision)
+                if (params.get("flow")) {
+                    config.flow = params.get("flow");
+                }
+
+                // Security / TLS
+                const security = params.get("security");
+                if (security === 'tls' || security === 'reality') {
+                    config.tls.enabled = true;
+                    config.tls.server_name = params.get("sni") || params.get("host") || "";
+                    config.tls.utls = {
+                        enabled: true,
+                        fingerprint: params.get("fp") || "chrome"
+                    };
+
+                    if (security === 'reality') {
+                        config.tls.reality = {
+                            enabled: true,
+                            public_key: params.get("pbk") || "",
+                            short_id: params.get("sid") || ""
+                        };
+                    }
+                }
+
+                // Transport
+                const type = params.get("type");
+                if (type === 'ws') {
+                    config.transport = {
+                        type: "ws",
+                        path: decodeURIComponent(params.get("path") || "/"),
+                        headers: {}
+                    };
+                    const host = params.get("host");
+                    if (host) config.transport.headers.Host = host;
+                } else if (type === 'grpc') {
+                    config.transport = {
+                        type: "grpc",
+                        service_name: decodeURIComponent(params.get("serviceName") || "")
+                    };
+                }
+
+                return config;
+            } catch (e) {
+                console.error("解析错误:", link, e);
+                return null;
+            }
+        }
+
+        // --- 4. 主生成逻辑 ---
+        function generateConfig() {
+            const input = document.getElementById("inputNodes").value;
+            const lines = input.split('\n').map(l => l.trim()).filter(l => l);
+            
+            const newNodes = [];
+            const newTags = [];
+
+            lines.forEach(line => {
+                if (line.startsWith("vless://")) {
+                    const node = parseVless(line);
+                    if (node) {
+                        // 处理重名Tag
+                        let finalTag = node.tag;
+                        let count = 1;
+                        while(newTags.includes(finalTag)) {
+                            count++;
+                            finalTag = `${node.tag} (${count})`;
+                        }
+                        node.tag = finalTag;
+                        
+                        newNodes.push(node);
+                        newTags.push(node.tag);
+                    }
+                }
+                // 这里可以扩展 vmsss, trojan 等解析
+            });
+
+            if (newNodes.length === 0) {
+                alert("未检测到有效的 vless 链接！");
+                return;
+            }
+
+            // 深拷贝模板
+            const finalConfig = JSON.parse(JSON.stringify(baseTemplate));
+
+            // 构建 outbounds
+            // 顺序：[Direct/Selectors...] + [User Nodes]
+            // 注意：sing-box 中 selector 引用 node tag，node 定义必须在 outbounds 列表中存在。
+            // 顺序通常不影响功能，但为了整洁，我们将 Selectors 放前面或后面均可，
+            // 这里的策略是：先放 Selectors，再放具体节点，或者反过来。
+            // 模板中，Static Groups 引用了 Node Tags。
+            
+            const staticOutbounds = getStaticOutbounds(newTags);
+            
+            // 组合：[Static Selectors/Direct] + [Parsed User Nodes]
+            // 注意：staticOutbounds 里面包含了 'proxy' selector, 它引用了 newTags。
+            finalConfig.outbounds = [...staticOutbounds, ...newNodes];
+
+            document.getElementById("outputConfig").value = JSON.stringify(finalConfig, null, 2);
+        }
+
+        // --- 5. 辅助功能 ---
+        function clearInput() {
+            document.getElementById("inputNodes").value = "";
+        }
+
+        function copyResult() {
+            const output = document.getElementById("outputConfig");
+            output.select();
+            document.execCommand("copy");
+            alert("配置已复制到剪贴板！");
+        }
+    </script>
+</body>
+</html>
