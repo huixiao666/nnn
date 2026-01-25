@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sing-box 配置自动生成器 (1.13.0-beta)</title>
+    <title>Sing-box 全协议配置生成器 (1.13.0+)</title>
     <style>
         :root {
             --bg-color: #1e1e1e;
@@ -11,6 +11,7 @@
             --accent-color: #007acc;
             --secondary-bg: #252526;
             --border-color: #3e3e42;
+            --success-color: #4caf50;
         }
 
         body {
@@ -18,35 +19,43 @@
             background-color: var(--bg-color);
             color: var(--text-color);
             margin: 0;
-            padding: 20px;
+            padding: 15px;
             display: flex;
             flex-direction: column;
-            align-items: center;
             height: 100vh;
             box-sizing: border-box;
         }
 
         .container {
             width: 100%;
-            max-width: 1200px;
+            max-width: 1000px;
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
-            gap: 20px;
-            height: 100%;
+            gap: 15px;
+            flex: 1;
         }
 
         h1 {
-            margin: 0;
-            font-size: 1.5rem;
+            margin: 0 0 10px 0;
+            font-size: 1.4rem;
             text-align: center;
             color: #fff;
         }
 
+        /* 布局调整：移动端优先，PC端并排 */
         .panels {
             display: flex;
-            gap: 20px;
+            flex-direction: column;
+            gap: 15px;
             flex: 1;
-            min-height: 0; /* Important for scroll */
+            min-height: 0;
+        }
+
+        @media (min-width: 768px) {
+            .panels {
+                flex-direction: row;
+            }
         }
 
         .panel {
@@ -55,13 +64,15 @@
             flex-direction: column;
             background-color: var(--secondary-bg);
             border-radius: 8px;
-            padding: 15px;
+            padding: 12px;
             border: 1px solid var(--border-color);
+            min-height: 250px;
         }
 
         .panel-header {
             font-weight: bold;
-            margin-bottom: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -76,28 +87,29 @@
             padding: 10px;
             resize: none;
             font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 12px;
+            font-size: 11px;
             outline: none;
+            white-space: pre;
+            overflow-x: auto;
         }
 
         textarea:focus {
             border-color: var(--accent-color);
         }
 
-        .controls {
+        .btn-group {
             display: flex;
-            justify-content: center;
-            gap: 15px;
+            gap: 10px;
         }
 
         button {
             background-color: var(--accent-color);
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 6px 12px;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 13px;
             transition: background 0.2s;
         }
 
@@ -113,43 +125,60 @@
             background-color: #505055;
         }
 
-        @media (max-width: 768px) {
-            .panels {
-                flex-direction: column;
-            }
+        button.main-action {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: var(--success-color);
+            margin-top: 5px;
+        }
+        
+        button.main-action:hover {
+            background-color: #43a047;
+        }
+        
+        .status-bar {
+            font-size: 12px;
+            color: #888;
+            margin-top: 5px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h1>Sing-box 自动配置1.13.0-beta.7</h1>
+        <h1>Sing-box 全协议配置生成器</h1>
         
         <div class="panels">
+            <!-- 输入面板 -->
             <div class="panel">
                 <div class="panel-header">
-                    <span>输入节点 (每行一个 vless://)</span>
+                    <span>节点链接 (支持 vless, vmess, trojan, ss, hy2, tuic)</span>
                     <button class="secondary" onclick="clearInput()">清空</button>
                 </div>
-                <textarea id="inputNodes" placeholder="在此粘贴 vless://... 链接&#10;支持多行输入"></textarea>
+                <textarea id="inputNodes" placeholder="在此粘贴分享链接，每行一个...&#10;vmess://...&#10;vless://...&#10;ss://...&#10;trojan://...&#10;hy2://..."></textarea>
             </div>
 
+            <!-- 输出面板 -->
             <div class="panel">
                 <div class="panel-header">
-                    <span>生成结果 (JSON)</span>
+                    <span>Config.json 结果</span>
                     <button class="secondary" onclick="copyResult()">复制配置</button>
                 </div>
-                <textarea id="outputConfig" readonly placeholder="点击“生成配置”后在此显示结果..."></textarea>
+                <textarea id="outputConfig" readonly placeholder="点击下方绿色按钮生成配置..."></textarea>
             </div>
         </div>
 
-        <div class="controls">
-            <button onclick="generateConfig()">⚡ 生成配置</button>
-        </div>
+        <button class="main-action" onclick="generateConfig()">🚀 自动转换并生成配置</button>
+        <div class="status-bar" id="statusBar">等待输入...</div>
     </div>
 
     <script>
-        // --- 1. 内置模板 (基于提供的 1.txt) ---
+        // ==========================================
+        // 1. 基础模板 (基于 1.txt)
+        // ==========================================
         const baseTemplate = {
             "log": { "level": "warn", "timestamp": true },
             "dns": {
@@ -175,7 +204,7 @@
                 },
                 { "type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 7890, "sniff": true, "sniff_override_destination": false }
             ],
-            "outbounds": [], // 这里我们将动态生成，只保留静态部分
+            "outbounds": [], 
             "route": {
                 "rules": [
                     { "port": 853, "action": "reject" },
@@ -237,10 +266,260 @@
             }
         };
 
-        // --- 2. 静态 Outbounds 定义 (Selector 组框架) ---
-        // 我们不直接使用 template 里的 outbounds，因为那里有硬编码的节点。
-        // 我们在生成时重新构建这个数组。
+        // ==========================================
+        // 2. 工具函数
+        // ==========================================
+        function safeBase64Decode(str) {
+            str = str.replace(/-/g, '+').replace(/_/g, '/');
+            while (str.length % 4) { str += '='; }
+            try {
+                return decodeURIComponent(escape(window.atob(str)));
+            } catch (e) {
+                return window.atob(str);
+            }
+        }
+
+        function getUrlParam(url, key) {
+            return url.searchParams.get(key) || "";
+        }
+
+        // ==========================================
+        // 3. 多协议解析器
+        // ==========================================
+        
+        // --- 3.1 VMess 解析 ---
+        function parseVmess(link) {
+            try {
+                const b64 = link.replace("vmess://", "");
+                const jsonStr = safeBase64Decode(b64);
+                const config = JSON.parse(jsonStr);
+                
+                const node = {
+                    type: "vmess",
+                    tag: config.ps || "VMess Node",
+                    server: config.add,
+                    server_port: parseInt(config.port),
+                    uuid: config.id,
+                    alter_id: parseInt(config.aid || 0),
+                    security: config.scy || "auto",
+                    tls: { enabled: false },
+                    packet_encoding: "xudp"
+                };
+
+                // Transport Mapping
+                if (config.net === "ws") {
+                    node.transport = {
+                        type: "ws",
+                        path: config.path || "/",
+                        headers: {}
+                    };
+                    if (config.host) node.transport.headers.Host = config.host;
+                } else if (config.net === "grpc") {
+                    node.transport = {
+                        type: "grpc",
+                        service_name: config.path || "grpc" // vmess json中 grpc serviceName通常在path字段
+                    };
+                }
+
+                // TLS
+                if (config.tls === "tls") {
+                    node.tls.enabled = true;
+                    node.tls.server_name = config.sni || config.host || "";
+                    node.tls.utls = { enabled: true, fingerprint: "chrome" };
+                }
+                
+                return node;
+            } catch(e) { console.error("VMess Parse Error", e); return null; }
+        }
+
+        // --- 3.2 Shadowsocks 解析 ---
+        function parseSs(link) {
+            try {
+                // 支持 ss://user:pass@host:port#tag 或 ss://base64#tag
+                let url;
+                if (link.includes("@")) {
+                    url = new URL(link);
+                } else {
+                    // Legacy base64 format
+                    const raw = link.replace("ss://", "").split("#");
+                    const decoded = safeBase64Decode(raw[0]);
+                    const tag = raw[1] ? decodeURIComponent(raw[1]) : "SS Node";
+                    // decoded pattern: method:pass@host:port
+                    const lastAt = decoded.lastIndexOf("@");
+                    const userPass = decoded.substring(0, lastAt);
+                    const serverPort = decoded.substring(lastAt + 1);
+                    url = new URL(`ss://${userPass}@${serverPort}#${tag}`);
+                }
+
+                const userPass =  decodeURIComponent(url.username).split(":");
+                // 某些链接格式是 ss://base64(method:pass)@host:port
+                let method = userPass[0];
+                let password = userPass[1];
+
+                if (!password && !url.password) {
+                     // 尝试解base64 userinfo
+                     const decodedAuth = safeBase64Decode(url.username).split(":");
+                     method = decodedAuth[0];
+                     password = decodedAuth[1];
+                } else if (url.password) {
+                    password = url.password;
+                }
+
+                const node = {
+                    type: "shadowsocks",
+                    tag: decodeURIComponent(url.hash).replace(/^#/, '') || "SS Node",
+                    server: url.hostname,
+                    server_port: parseInt(url.port),
+                    method: method,
+                    password: password
+                };
+                
+                // 简易插件支持 (Obfs) - Singbox内置支持不多，这里仅作基础兼容
+                const plugin = url.searchParams.get("plugin");
+                if (plugin && plugin.includes("obfs")) {
+                     // 简单处理 simple-obfs 转换为 http/tls transport 并不完美，
+                     // singbox 推荐使用 shadow-tls 或 标准 transport。
+                     // 这里暂不深入转换复杂插件，仅保留基础SS。
+                }
+
+                return node;
+            } catch(e) { console.error("SS Parse Error", e); return null; }
+        }
+
+        // --- 3.3 Trojan / VLESS / Hysteria2 / TUIC 通用URL解析 ---
+        function parseUrlCommon(link, protocol) {
+            try {
+                const url = new URL(link);
+                const tag = decodeURIComponent(url.hash).replace(/^#/, '') || `${protocol} Node`;
+                
+                const node = {
+                    type: protocol,
+                    tag: tag,
+                    server: url.hostname,
+                    server_port: parseInt(url.port) || 443,
+                    tls: { enabled: false }
+                };
+
+                // Auth
+                if (protocol === "trojan" || protocol === "hysteria2") {
+                    node.password = decodeURIComponent(url.username);
+                } else if (protocol === "tuic") {
+                    node.uuid = decodeURIComponent(url.username);
+                    node.password = decodeURIComponent(url.password);
+                } else if (protocol === "vless") {
+                    node.uuid = decodeURIComponent(url.username);
+                    node.flow = url.searchParams.get("flow") || "";
+                    node.packet_encoding = "xudp";
+                }
+
+                // Security / TLS / SNI
+                const sni = url.searchParams.get("sni") || url.searchParams.get("peer") || url.searchParams.get("host");
+                const security = url.searchParams.get("security"); // vless specific
+                const insecure = url.searchParams.get("allowInsecure") === "1";
+                const alpn = url.searchParams.get("alpn");
+                const fp = url.searchParams.get("fp");
+
+                // Determine TLS
+                if (protocol === "hysteria2" || protocol === "tuic" || protocol === "trojan" || security === "tls" || security === "reality") {
+                    node.tls.enabled = true;
+                    if (sni) node.tls.server_name = sni;
+                    if (insecure) node.tls.insecure = true;
+                    if (alpn) node.tls.alpn = alpn.split(",");
+                    
+                    node.tls.utls = { enabled: true, fingerprint: fp || "chrome" };
+                    
+                    // Reality
+                    if (security === "reality" || (protocol === "vless" && url.searchParams.get("pbk"))) {
+                        node.tls.reality = {
+                            enabled: true,
+                            public_key: url.searchParams.get("pbk"),
+                            short_id: url.searchParams.get("sid") || ""
+                        };
+                    }
+                }
+
+                // Transport (WS/GRPC/HTTPUpgrade)
+                const type = url.searchParams.get("type");
+                const path = decodeURIComponent(url.searchParams.get("path") || "/");
+                const host = url.searchParams.get("host");
+                const serviceName = url.searchParams.get("serviceName");
+
+                if (type === "ws") {
+                    node.transport = { type: "ws", path: path, headers: {} };
+                    if (host) node.transport.headers.Host = host;
+                } else if (type === "grpc") {
+                    node.transport = { type: "grpc", service_name: serviceName || path };
+                } else if (type === "http") {
+                     node.transport = { type: "http", path: path, headers: {} };
+                     if (host) node.transport.headers.Host = host;
+                }
+
+                // Hysteria2 Obfs
+                if (protocol === "hysteria2") {
+                    const obfs = url.searchParams.get("obfs");
+                    if (obfs && obfs !== "none") {
+                        node.obfs = { type: obfs, password: url.searchParams.get("obfs-password") };
+                    }
+                }
+                
+                // Tuic Congestion
+                if (protocol === "tuic") {
+                    const cc = url.searchParams.get("congestion_control");
+                    if (cc) node.congestion_control = cc;
+                }
+
+                return node;
+            } catch(e) { console.error(`${protocol} Parse Error`, e); return null; }
+        }
+
+        // --- 3.4 调度中心 ---
+        function parseNode(line) {
+            line = line.trim();
+            if (!line) return null;
+
+            if (line.startsWith("vmess://")) return parseVmess(line);
+            if (line.startsWith("ss://")) return parseSs(line);
+            if (line.startsWith("trojan://")) return parseUrlCommon(line, "trojan");
+            if (line.startsWith("vless://")) return parseUrlCommon(line, "vless");
+            if (line.startsWith("hy2://") || line.startsWith("hysteria2://")) return parseUrlCommon(line, "hysteria2");
+            if (line.startsWith("tuic://")) return parseUrlCommon(line, "tuic");
+            if (line.startsWith("socks5://") || line.startsWith("socks://")) {
+                 // 简单处理socks
+                 try {
+                     const u = new URL(line);
+                     return {
+                         type: "socks",
+                         tag: decodeURIComponent(u.hash).replace(/^#/, '') || "Socks5",
+                         server: u.hostname,
+                         server_port: parseInt(u.port),
+                         username: u.username,
+                         password: u.password
+                     };
+                 } catch(e) { return null; }
+            }
+            if (line.startsWith("http://") && line.includes("@")) {
+                 // 简单处理http proxy
+                 try {
+                     const u = new URL(line);
+                     return {
+                         type: "http",
+                         tag: decodeURIComponent(u.hash).replace(/^#/, '') || "HTTP",
+                         server: u.hostname,
+                         server_port: parseInt(u.port),
+                         username: u.username,
+                         password: u.password
+                     };
+                 } catch(e) { return null; }
+            }
+
+            return null;
+        }
+
+        // ==========================================
+        // 4. 生成逻辑
+        // ==========================================
         function getStaticOutbounds(proxyTags) {
+            const allProxies = proxyTags.length > 0 ? proxyTags : ["DIRECT"];
             return [
                 { "type": "direct", "tag": "DIRECT" },
                 {
@@ -253,152 +532,79 @@
                 {
                     "type": "urltest",
                     "tag": "auto",
-                    "outbounds": proxyTags.length > 0 ? proxyTags : ["DIRECT"], // 防止空数组报错
+                    "outbounds": allProxies,
                     "url": "https://www.gstatic.com/generate_204",
                     "interval": "10m",
                     "tolerance": 50,
                     "idle_timeout": "30m",
                     "interrupt_exist_connections": false
                 },
-                // 分流组，全部指向 [proxy, auto, DIRECT] 逻辑
+                // 创建各功能组
                 ...["google", "apple", "telegram", "bilibili", "netflix", "bahamut", "youtube", "openai", "GLOBAL", "cn", "final"].map(tag => ({
                     "type": "selector",
                     "tag": tag,
-                    "outbounds": tag === "apple" || tag === "bilibili" || tag === "cn" ? ["DIRECT", "proxy"] : (tag === "final" ? ["proxy", "DIRECT"] : ["proxy", "auto", "DIRECT"]), // 微调默认值以匹配原模板
+                    "outbounds": tag === "apple" || tag === "bilibili" || tag === "cn" ? ["DIRECT", "proxy"] : (tag === "final" ? ["proxy", "DIRECT"] : ["proxy", "auto", "DIRECT"]),
                     "default": tag === "apple" || tag === "bilibili" || tag === "cn" || tag === "GLOBAL" ? "DIRECT" : "proxy"
                 }))
             ];
         }
 
-        // --- 3. 解析器逻辑 ---
-        function parseVless(link) {
-            try {
-                const url = new URL(link);
-                const params = url.searchParams;
-                const tag = decodeURIComponent(url.hash).replace(/^#/, '') || 'Unnamed Node';
-
-                const config = {
-                    type: "vless",
-                    tag: tag,
-                    server: url.hostname,
-                    server_port: parseInt(url.port) || 443,
-                    uuid: url.username,
-                    packet_encoding: "xudp", // 模板默认配置
-                    tls: {
-                        enabled: false
-                    }
-                };
-
-                // Flow (Vision)
-                if (params.get("flow")) {
-                    config.flow = params.get("flow");
-                }
-
-                // Security / TLS
-                const security = params.get("security");
-                if (security === 'tls' || security === 'reality') {
-                    config.tls.enabled = true;
-                    config.tls.server_name = params.get("sni") || params.get("host") || "";
-                    config.tls.utls = {
-                        enabled: true,
-                        fingerprint: params.get("fp") || "chrome"
-                    };
-
-                    if (security === 'reality') {
-                        config.tls.reality = {
-                            enabled: true,
-                            public_key: params.get("pbk") || "",
-                            short_id: params.get("sid") || ""
-                        };
-                    }
-                }
-
-                // Transport
-                const type = params.get("type");
-                if (type === 'ws') {
-                    config.transport = {
-                        type: "ws",
-                        path: decodeURIComponent(params.get("path") || "/"),
-                        headers: {}
-                    };
-                    const host = params.get("host");
-                    if (host) config.transport.headers.Host = host;
-                } else if (type === 'grpc') {
-                    config.transport = {
-                        type: "grpc",
-                        service_name: decodeURIComponent(params.get("serviceName") || "")
-                    };
-                }
-
-                return config;
-            } catch (e) {
-                console.error("解析错误:", link, e);
-                return null;
-            }
-        }
-
-        // --- 4. 主生成逻辑 ---
         function generateConfig() {
             const input = document.getElementById("inputNodes").value;
-            const lines = input.split('\n').map(l => l.trim()).filter(l => l);
-            
+            const lines = input.split('\n');
             const newNodes = [];
             const newTags = [];
+            const tagCounts = {};
+
+            const status = document.getElementById("statusBar");
+            status.textContent = "正在解析...";
 
             lines.forEach(line => {
-                if (line.startsWith("vless://")) {
-                    const node = parseVless(line);
-                    if (node) {
-                        // 处理重名Tag
-                        let finalTag = node.tag;
-                        let count = 1;
-                        while(newTags.includes(finalTag)) {
-                            count++;
-                            finalTag = `${node.tag} (${count})`;
-                        }
-                        node.tag = finalTag;
-                        
-                        newNodes.push(node);
-                        newTags.push(node.tag);
+                const node = parseNode(line);
+                if (node) {
+                    // 处理重名Tag
+                    let baseTag = node.tag;
+                    if (tagCounts[baseTag]) {
+                        tagCounts[baseTag]++;
+                        node.tag = `${baseTag} (${tagCounts[baseTag]})`;
+                    } else {
+                        tagCounts[baseTag] = 1;
                     }
+                    
+                    newNodes.push(node);
+                    newTags.push(node.tag);
                 }
-                // 这里可以扩展 vmsss, trojan 等解析
             });
 
             if (newNodes.length === 0) {
-                alert("未检测到有效的 vless 链接！");
+                status.textContent = "❌ 未检测到有效节点链接";
+                alert("未检测到有效节点！请检查格式是否正确。");
                 return;
             }
 
-            // 深拷贝模板
             const finalConfig = JSON.parse(JSON.stringify(baseTemplate));
-
-            // 构建 outbounds
-            // 顺序：[Direct/Selectors...] + [User Nodes]
-            // 注意：sing-box 中 selector 引用 node tag，node 定义必须在 outbounds 列表中存在。
-            // 顺序通常不影响功能，但为了整洁，我们将 Selectors 放前面或后面均可，
-            // 这里的策略是：先放 Selectors，再放具体节点，或者反过来。
-            // 模板中，Static Groups 引用了 Node Tags。
-            
             const staticOutbounds = getStaticOutbounds(newTags);
             
-            // 组合：[Static Selectors/Direct] + [Parsed User Nodes]
-            // 注意：staticOutbounds 里面包含了 'proxy' selector, 它引用了 newTags。
+            // 组装 Outbounds: 静态策略组 + 动态节点
             finalConfig.outbounds = [...staticOutbounds, ...newNodes];
 
-            document.getElementById("outputConfig").value = JSON.stringify(finalConfig, null, 2);
+            const jsonStr = JSON.stringify(finalConfig, null, 2);
+            document.getElementById("outputConfig").value = jsonStr;
+            status.textContent = `✅ 成功生成 ${newNodes.length} 个节点配置`;
         }
 
-        // --- 5. 辅助功能 ---
         function clearInput() {
             document.getElementById("inputNodes").value = "";
+            document.getElementById("outputConfig").value = "";
+            document.getElementById("statusBar").textContent = "等待输入...";
         }
 
         function copyResult() {
             const output = document.getElementById("outputConfig");
+            if (!output.value) return;
             output.select();
             document.execCommand("copy");
-            alert("配置已复制到剪贴板！");
+            document.getElementById("statusBar").textContent = "📋 已复制到剪贴板";
         }
     </script>
 </body>
