@@ -3,25 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sing-box Universal Config Converter</title>
+    <title>Universal Sing-box Converter</title>
     <!-- 引入 YAML 解析库 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent: #3b82f6;
-            --accent-hover: #2563eb;
-            --border: #334155;
-            --success: #10b981;
+            --bg: #0f0f12;
+            --surface: #1b1b1f;
+            --surface-hover: #27272c;
+            --primary: #5e6ad2;
+            --text-main: #ededed;
+            --text-sub: #a1a1aa;
+            --border: #2e2e32;
+            --success: #22c55e;
+            --warning: #f59e0b;
         }
 
         body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-primary);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
             margin: 0;
             height: 100vh;
             display: flex;
@@ -29,21 +30,37 @@
             overflow: hidden;
         }
 
-        header {
+        .navbar {
             padding: 0 24px;
-            height: 64px;
-            border-bottom: 1px solid var(--border);
+            height: 60px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--border);
+            background: rgba(15, 15, 18, 0.8);
+            backdrop-filter: blur(12px);
+            z-index: 10;
         }
 
-        h1 { margin: 0; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 10px; }
-        .tag { font-size: 0.75rem; background: var(--border); padding: 2px 8px; border-radius: 4px; color: var(--text-secondary); }
+        .navbar h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-        .container {
+        .tag {
+            font-size: 11px;
+            background: var(--surface-hover);
+            padding: 2px 8px;
+            border-radius: 12px;
+            color: var(--text-sub);
+            border: 1px solid var(--border);
+        }
+
+        .main-content {
             flex: 1;
             display: flex;
             padding: 20px;
@@ -55,597 +72,576 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: var(--card-bg);
+            background: var(--surface);
             border-radius: 12px;
             border: 1px solid var(--border);
+            overflow: hidden;
         }
 
         .panel-header {
-            padding: 12px 20px;
-            border-bottom: 1px solid var(--border);
+            padding: 12px 16px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.875rem;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 13px;
             font-weight: 600;
-            color: var(--text-secondary);
+            color: var(--text-sub);
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .editor-wrapper {
+        .editor {
             flex: 1;
-            position: relative;
-        }
-
-        textarea {
-            width: 100%;
-            height: 100%;
             background: transparent;
             border: none;
-            color: var(--text-primary);
-            padding: 20px;
-            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            padding: 16px;
+            color: #d4d4d4;
+            font-family: 'JetBrains Mono', 'Consolas', monospace;
             font-size: 13px;
             line-height: 1.5;
             resize: none;
             outline: none;
-            box-sizing: border-box;
         }
 
         .btn {
-            background: var(--accent);
-            color: white;
-            border: none;
-            padding: 6px 16px;
+            background: var(--surface-hover);
+            border: 1px solid var(--border);
+            color: var(--text-main);
+            padding: 6px 12px;
             border-radius: 6px;
-            font-size: 0.875rem;
-            font-weight: 500;
             cursor: pointer;
+            font-size: 12px;
             transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
         }
 
-        .btn:hover { background: var(--accent-hover); }
-        .btn-ghost { background: transparent; color: var(--text-secondary); border: 1px solid var(--border); }
-        .btn-ghost:hover { border-color: var(--text-secondary); color: var(--text-primary); }
+        .btn:hover { background: #333; border-color: #444; }
+        .btn-primary { background: var(--primary); border-color: var(--primary); color: white; }
+        .btn-primary:hover { background: #4e5ac0; }
 
-        footer {
-            height: 40px;
+        .status-bar {
+            padding: 0 24px;
+            height: 36px;
+            background: var(--surface);
             border-top: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 24px;
-            font-size: 0.75rem;
-            color: var(--text-secondary);
-            background: var(--card-bg);
+            font-size: 12px;
+            color: var(--text-sub);
         }
 
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-secondary); margin-right: 8px; display: inline-block; }
-        .status-dot.active { background: var(--success); box-shadow: 0 0 8px rgba(16, 185, 129, 0.4); }
+        .format-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-sub);
+            margin-right: 6px;
+        }
+        .format-badge.active { background: var(--success); }
+        .format-badge.error { background: var(--warning); }
 
         @media (max-width: 768px) {
-            .container { flex-direction: column; }
+            .main-content { flex-direction: column; }
+            .navbar { padding: 0 16px; }
         }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>Sing-box Converter <span class="tag">Multi-Format</span></h1>
-    <div style="display: flex; gap: 12px; align-items: center;">
-        <label style="font-size: 0.875rem; color: var(--text-secondary); display: flex; align-items: center; gap: 8px; cursor: pointer;">
-            <input type="checkbox" id="autoMode" checked> 自动转换
-        </label>
-        <button class="btn" onclick="convert()">转换</button>
-    </div>
-</header>
-
-<div class="container">
-    <div class="panel">
-        <div class="panel-header">
-            <span>输入 (Mixed: Clash/Xray/Singbox/Surge/Links)</span>
-            <button class="btn-ghost" style="padding: 4px 10px; font-size: 12px;" onclick="clearInput()">清空</button>
-        </div>
-        <div class="editor-wrapper">
-            <textarea id="input" placeholder="请在此粘贴配置。支持混合粘贴：
-1. Clash Meta YAML (Proxy Block)
-2. Sing-box JSON (Outbound Object)
-3. Xray JSON (Outbound Object)
-4. Surge Proxy Line (Node = type, server...)
-5. vmess://, vless:// 等链接"></textarea>
+    <div class="navbar">
+        <h1>
+            Sing-box Converter
+            <span class="tag">1.13.0-beta</span>
+        </h1>
+        <div style="display: flex; gap: 10px;">
+            <button class="btn btn-primary" onclick="convert()">⚡ 转换配置</button>
         </div>
     </div>
-    <div class="panel">
-        <div class="panel-header">
-            <span>输出 (Sing-box 1.13+)</span>
-            <button class="btn-ghost" style="padding: 4px 10px; font-size: 12px;" onclick="copyResult()">复制</button>
+
+    <div class="main-content">
+        <!-- 左侧输入 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">📝 输入源 (Clash/Singbox/Xray/Links)</span>
+                <button class="btn" onclick="clearInput()">清空</button>
+            </div>
+            <textarea id="inputArea" class="editor" placeholder="支持多种格式混输：
+1. Clash Meta (Mihomo) YAML 配置
+2. Sing-box / Xray JSON 配置
+3. 节点分享链接 (vless://, vmess://, ss://, hy2://...)
+4. Base64 订阅内容
+
+在此粘贴..."></textarea>
         </div>
-        <div class="editor-wrapper">
-            <textarea id="output" readonly placeholder="等待生成..."></textarea>
+
+        <!-- 右侧输出 -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-title">⚙️ 输出结果 (Sing-box JSON)</span>
+                <button class="btn" onclick="copyResult()">📋 复制</button>
+            </div>
+            <textarea id="outputArea" class="editor" readonly placeholder="等待转换..."></textarea>
         </div>
     </div>
-</div>
 
-<footer>
-    <div style="display: flex; align-items: center;">
-        <span class="status-dot" id="statusDot"></span>
-        <span id="statusMsg">就绪</span>
+    <div class="status-bar">
+        <div style="display: flex; align-items: center;">
+            <span id="statusBadge" class="format-badge"></span>
+            <span id="statusText">等待输入</span>
+        </div>
+        <span id="statsText">节点数: 0</span>
     </div>
-    <span id="nodeCount">节点数: 0</span>
-</footer>
 
-<script>
-/**
- * 核心模板 (基于 1.txt)
- */
-const BASE_TEMPLATE = {
-  "log": { "level": "warn", "timestamp": true },
-  "dns": {
-    "servers": [
-      { "tag": "dns_local", "type": "udp", "server": "223.5.5.5" },
-      { "tag": "dns_google", "type": "udp", "server": "8.8.8.8", "detour": "proxy" },
-      { "tag": "dns_fakeip", "type": "fakeip", "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" }
-    ],
-    "rules": [
-      { "clash_mode": "Direct", "server": "dns_local" },
-      { "clash_mode": "Global", "server": "dns_fakeip" },
-      { "rule_set": "geosite_cn", "server": "dns_local" },
-      { "rule_set": ["geosite_google", "geosite_youtube", "geosite_netflix", "geosite_telegram", "geosite_geolocation_non_cn"], "server": "dns_fakeip" }
-    ],
-    "final": "dns_google",
-    "independent_cache": true
-  },
-  "inbounds": [
-    {
-      "type": "tun",
-      "tag": "tun-in",
-      "address": ["172.19.0.1/30", "fd00::1/126"],
-      "mtu": 1500,
-      "auto_route": true,
-      "strict_route": true,
-      "stack": "mixed",
-      "sniff": true,
-      "sniff_override_destination": false,
-      "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 7890 } }
-    },
-    { "type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 7890, "sniff": true, "sniff_override_destination": false }
-  ],
-  "outbounds": [],
-  "route": {
-    "rules": [
-      { "port": 853, "action": "reject" },
-      { "protocol": "quic", "action": "reject" },
-      { "protocol": "dns", "action": "hijack-dns" },
-      { "port": 53, "action": "hijack-dns" },
-      { "rule_set": "geosite_telegram", "action": "route", "outbound": "telegram" },
-      { "rule_set": "geoip_telegram", "action": "route", "outbound": "telegram" },
-      { "action": "sniff", "sniffer": ["http", "tls", "quic", "dns"], "timeout": "500ms" },
-      { "clash_mode": "Direct", "action": "route", "outbound": "DIRECT" },
-      { "clash_mode": "Global", "action": "route", "outbound": "GLOBAL" },
-      { "ip_is_private": true, "action": "route", "outbound": "DIRECT" },
-      { "rule_set": "geosite_cn", "action": "route", "outbound": "DIRECT" },
-      { "rule_set": "geosite_bilibili", "action": "route", "outbound": "bilibili" },
-      { "rule_set": "geosite_apple", "action": "route", "outbound": "apple" },
-      { "rule_set": ["geosite_ads", "geosite_adguard"], "action": "reject" },
-      { "rule_set": "geosite_google", "action": "route", "outbound": "google" },
-      { "rule_set": "geosite_netflix", "action": "route", "outbound": "netflix" },
-      { "rule_set": "geosite_youtube", "action": "route", "outbound": "youtube" },
-      { "rule_set": "geosite_openai", "action": "route", "outbound": "openai" },
-      { "rule_set": "geosite_bahamut", "action": "route", "outbound": "bahamut" },
-      { "rule_set": "geoip_netflix", "action": "route", "outbound": "netflix" },
-      { "rule_set": "geosite_geolocation_non_cn", "action": "route", "outbound": "proxy" },
-      { "rule_set": "geoip_google", "action": "route", "outbound": "google" },
-      { "rule_set": "geoip_cn", "action": "route", "outbound": "cn" }
-    ],
-    "rule_set": [
-      { "tag": "geosite_ads", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/category-ads-all.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_adguard", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/217heidai/adblockfilters/main/rules/adblocksingbox.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_apple", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/apple.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_bahamut", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/bahamut.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_bilibili", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/bilibili.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_cn", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/cn.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_google", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/google.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_netflix", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/netflix.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_openai", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/openai.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_telegram", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/telegram.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_youtube", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/youtube.srs", "download_detour": "DIRECT" },
-      { "tag": "geosite_geolocation_non_cn", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/geolocation-!cn.srs", "download_detour": "DIRECT" },
-      { "tag": "geoip_cn", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/cn.srs", "download_detour": "DIRECT" },
-      { "tag": "geoip_google", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/google.srs", "download_detour": "DIRECT" },
-      { "tag": "geoip_netflix", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/netflix.srs", "download_detour": "DIRECT" },
-      { "tag": "geoip_telegram", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/telegram.srs", "download_detour": "DIRECT" }
-    ],
-    "final": "proxy",
-    "auto_detect_interface": true,
-    "override_android_vpn": true,
-    "default_domain_resolver": "dns_local"
-  },
-  "experimental": {
-    "cache_file": { "enabled": true, "path": "cache.db", "cache_id": "singbox", "store_fakeip": true, "store_rdrc": true },
-    "clash_api": {
-      "external_controller": "127.0.0.1:9090",
-      "external_ui": "ui",
-      "external_ui_download_url": "https://ghfast.top/https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip",
-      "external_ui_download_detour": "DIRECT",
-      "default_mode": "rule"
-    }
-  }
-};
-
-/**
- * 工具函数
- */
-const safeBase64Decode = (str) => {
-    try {
-        return decodeURIComponent(escape(window.atob(str.replace(/-/g, '+').replace(/_/g, '/'))));
-    } catch {
-        return str; // Return original if not base64
-    }
-};
-
-const updateStatus = (msg, type = 'normal') => {
-    const dot = document.getElementById('statusDot');
-    const txt = document.getElementById('statusMsg');
-    txt.textContent = msg;
-    dot.className = 'status-dot ' + (type === 'success' ? 'active' : '');
-};
-
-/**
- * 核心转换逻辑：将任意对象转换为 Sing-box 节点
- */
-const transformToSingbox = (item, type) => {
-    // 1. Sing-box Native Object
-    if (type === 'singbox') {
-        if (!item.type || item.type === 'selector' || item.type === 'urltest') return null;
-        return item;
-    }
-
-    // 2. Clash Object (Mihomo)
-    if (type === 'clash') {
-        const node = {
-            tag: item.name || 'Unnamed',
-            server: item.server,
-            server_port: parseInt(item.port)
+    <script>
+        // ==========================================
+        // 1. 核心模板 (来源于用户提供的 1.txt)
+        // ==========================================
+        const TEMPLATE = {
+            "log": { "level": "warn", "timestamp": true },
+            "dns": {
+                "servers": [
+                    { "tag": "dns_local", "type": "udp", "server": "223.5.5.5" },
+                    { "tag": "dns_google", "type": "udp", "server": "8.8.8.8", "detour": "proxy" },
+                    { "tag": "dns_fakeip", "type": "fakeip", "inet4_range": "198.18.0.0/15", "inet6_range": "fc00::/18" }
+                ],
+                "rules": [
+                    { "clash_mode": "Direct", "server": "dns_local" },
+                    { "clash_mode": "Global", "server": "dns_fakeip" },
+                    { "rule_set": "geosite_cn", "server": "dns_local" },
+                    { "rule_set": ["geosite_google", "geosite_youtube", "geosite_netflix", "geosite_telegram", "geosite_geolocation_non_cn"], "server": "dns_fakeip" }
+                ],
+                "final": "dns_google",
+                "independent_cache": true
+            },
+            "inbounds": [
+                {
+                    "type": "tun", "tag": "tun-in", "address": ["172.19.0.1/30", "fd00::1/126"], "mtu": 1500,
+                    "auto_route": true, "strict_route": true, "stack": "mixed", "sniff": true, "sniff_override_destination": false,
+                    "platform": { "http_proxy": { "enabled": true, "server": "127.0.0.1", "server_port": 7890 } }
+                },
+                { "type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 7890, "sniff": true, "sniff_override_destination": false }
+            ],
+            "outbounds": [], // 动态生成
+            "route": {
+                "rules": [
+                    { "port": 853, "action": "reject" },
+                    { "protocol": "quic", "action": "reject" },
+                    { "protocol": "dns", "action": "hijack-dns" },
+                    { "port": 53, "action": "hijack-dns" },
+                    { "rule_set": "geosite_telegram", "action": "route", "outbound": "telegram" },
+                    { "rule_set": "geoip_telegram", "action": "route", "outbound": "telegram" },
+                    { "action": "sniff", "sniffer": ["http", "tls", "quic", "dns"], "timeout": "500ms" },
+                    { "clash_mode": "Direct", "action": "route", "outbound": "DIRECT" },
+                    { "clash_mode": "Global", "action": "route", "outbound": "GLOBAL" },
+                    { "ip_is_private": true, "action": "route", "outbound": "DIRECT" },
+                    { "rule_set": "geosite_cn", "action": "route", "outbound": "DIRECT" },
+                    { "rule_set": "geosite_bilibili", "action": "route", "outbound": "bilibili" },
+                    { "rule_set": "geosite_apple", "action": "route", "outbound": "apple" },
+                    { "rule_set": ["geosite_ads", "geosite_adguard"], "action": "reject" },
+                    { "rule_set": "geosite_google", "action": "route", "outbound": "google" },
+                    { "rule_set": "geosite_netflix", "action": "route", "outbound": "netflix" },
+                    { "rule_set": "geosite_youtube", "action": "route", "outbound": "youtube" },
+                    { "rule_set": "geosite_openai", "action": "route", "outbound": "openai" },
+                    { "rule_set": "geosite_bahamut", "action": "route", "outbound": "bahamut" },
+                    { "rule_set": "geoip_netflix", "action": "route", "outbound": "netflix" },
+                    { "rule_set": "geosite_geolocation_non_cn", "action": "route", "outbound": "proxy" },
+                    { "rule_set": "geoip_google", "action": "route", "outbound": "google" },
+                    { "rule_set": "geoip_cn", "action": "route", "outbound": "cn" }
+                ],
+                "rule_set": [
+                    { "tag": "geosite_ads", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/category-ads-all.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_adguard", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/217heidai/adblockfilters/main/rules/adblocksingbox.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_apple", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/apple.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_bahamut", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/bahamut.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_bilibili", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/bilibili.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_cn", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/cn.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_google", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/google.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_netflix", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/netflix.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_openai", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/openai.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_telegram", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/telegram.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_youtube", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/youtube.srs", "download_detour": "DIRECT" },
+                    { "tag": "geosite_geolocation_non_cn", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geosite/geolocation-!cn.srs", "download_detour": "DIRECT" },
+                    { "tag": "geoip_cn", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/cn.srs", "download_detour": "DIRECT" },
+                    { "tag": "geoip_google", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/google.srs", "download_detour": "DIRECT" },
+                    { "tag": "geoip_netflix", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/netflix.srs", "download_detour": "DIRECT" },
+                    { "tag": "geoip_telegram", "type": "remote", "format": "binary", "url": "https://ghfast.top/https://raw.githubusercontent.com/MetaCubeX/meta-rules-dat/refs/heads/sing/geo/geoip/telegram.srs", "download_detour": "DIRECT" }
+                ],
+                "final": "proxy",
+                "auto_detect_interface": true,
+                "override_android_vpn": true,
+                "default_domain_resolver": "dns_local"
+            },
+            "experimental": {
+                "cache_file": { "enabled": true, "path": "cache.db", "cache_id": "singbox", "store_fakeip": true, "store_rdrc": true },
+                "clash_api": {
+                    "external_controller": "127.0.0.1:9090",
+                    "external_ui": "ui",
+                    "external_ui_download_url": "https://ghfast.top/https://github.com/MetaCubeX/metacubexd/archive/refs/heads/gh-pages.zip",
+                    "external_ui_download_detour": "DIRECT",
+                    "default_mode": "rule"
+                }
+            }
         };
 
-        if (item.type === 'vless') {
-            node.type = 'vless';
-            node.uuid = item.uuid;
-            node.flow = item.flow || '';
-            node.packet_encoding = item['packet-encoding'] || 'xudp';
+        // ==========================================
+        // 2. 工具函数
+        // ==========================================
+        function safeBase64Decode(str) {
+            str = str.replace(/-/g, '+').replace(/_/g, '/');
+            while (str.length % 4) { str += '='; }
+            try { return decodeURIComponent(escape(window.atob(str))); } catch { return window.atob(str); }
+        }
+
+        function setStatus(text, type = 'normal') {
+            const badge = document.getElementById('statusBadge');
+            const txt = document.getElementById('statusText');
+            txt.textContent = text;
+            badge.className = 'format-badge ' + (type === 'success' ? 'active' : (type === 'error' ? 'error' : ''));
+        }
+
+        // ==========================================
+        // 3. Clash 转 Sing-box 核心逻辑
+        // ==========================================
+        function mapClashToSingbox(p) {
+            const node = { tag: p.name || 'Unnamed' };
             
-            if (item.tls) {
-                node.tls = {
-                    enabled: true,
-                    server_name: item.servername,
-                    insecure: item['skip-cert-verify'] || false,
-                    utls: { enabled: true, fingerprint: item['client-fingerprint'] || 'chrome' }
-                };
-                if (item['reality-opts']) {
-                    node.tls.reality = {
-                        enabled: true,
-                        public_key: item['reality-opts']['public-key'],
-                        short_id: item['reality-opts']['short-id']
+            // 基础映射
+            if (p.type === 'ss' || p.type === 'shadowsocks') {
+                node.type = 'shadowsocks';
+                node.server = p.server;
+                node.server_port = p.port;
+                node.method = p.cipher;
+                node.password = p.password;
+                if (p.plugin === 'obfs') {
+                    // 简单 obfs 处理
+                    // Singbox原生支持shadowsocks plugin配置较繁琐，这里暂忽略复杂plugin
+                }
+            } else if (p.type === 'vmess') {
+                node.type = 'vmess';
+                node.server = p.server;
+                node.server_port = p.port;
+                node.uuid = p.uuid;
+                node.alter_id = p.alterId || 0;
+                node.security = p.cipher || 'auto';
+                node.packet_encoding = p.packet_encoding || 'xudp';
+                
+                // Transport
+                if (p.network === 'ws') {
+                    node.transport = { type: 'ws', path: p['ws-opts']?.path || '/', headers: p['ws-opts']?.headers || {} };
+                } else if (p.network === 'grpc') {
+                    node.transport = { type: 'grpc', service_name: p['grpc-opts']?.['grpc-service-name'] };
+                }
+                // TLS
+                if (p.tls) {
+                    node.tls = { 
+                        enabled: true, 
+                        server_name: p.servername || p.server, 
+                        utls: { enabled: true, fingerprint: p.fingerprint || 'chrome' },
+                        insecure: p['skip-cert-verify'] || false
                     };
                 }
-            }
-
-            if (item.network === 'ws') {
-                node.transport = {
-                    type: 'ws',
-                    path: item['ws-opts']?.path,
-                    headers: item['ws-opts']?.headers || item['ws-headers'] // 兼容 clash 两种 header 写法
-                };
-            } else if (item.network === 'grpc') {
-                node.transport = {
-                    type: 'grpc',
-                    service_name: item['grpc-opts']?.['grpc-service-name']
-                };
-            }
-        }
-        else if (item.type === 'vmess') {
-            node.type = 'vmess';
-            node.uuid = item.uuid;
-            node.alter_id = item.alterId || 0;
-            node.security = item.cipher || 'auto';
-            node.packet_encoding = 'xudp';
-            if(item.tls) {
-                node.tls = { enabled: true, server_name: item.servername, insecure: item['skip-cert-verify'] };
-                if(item['client-fingerprint']) node.tls.utls = { enabled: true, fingerprint: item['client-fingerprint'] };
-            }
-            if(item.network === 'ws') node.transport = { type: 'ws', path: item['ws-opts']?.path, headers: item['ws-opts']?.headers };
-            if(item.network === 'grpc') node.transport = { type: 'grpc', service_name: item['grpc-opts']?.['grpc-service-name'] };
-        }
-        // ... 支持其他协议 ss, trojan, hysteria2 ...
-        else if (item.type === 'ss') {
-            node.type = 'shadowsocks';
-            node.method = item.cipher;
-            node.password = item.password;
-        }
-        else if (item.type === 'trojan') {
-            node.type = 'trojan';
-            node.password = item.password;
-            node.tls = { enabled: true, server_name: item.sni || item.server, insecure: item['skip-cert-verify'] };
-        }
-        else if (item.type === 'hysteria2') {
-            node.type = 'hysteria2';
-            node.password = item.password;
-            node.tls = { enabled: true, server_name: item.sni || item.server, insecure: item['skip-cert-verify'] };
-            if(item.obfs) node.obfs = { type: 'salamander', password: item['obfs-password'] };
-        }
-        else { return null; }
-        return node;
-    }
-
-    // 3. Xray Object (Outbound)
-    if (type === 'xray') {
-        if (!item.settings?.vnext?.[0]) return null;
-        const vnext = item.settings.vnext[0];
-        const user = vnext.users[0];
-        const stream = item.streamSettings || {};
-        
-        const node = {
-            tag: item.tag || 'Xray Node',
-            server: vnext.address,
-            server_port: parseInt(vnext.port)
-        };
-
-        if (item.protocol === 'vless') {
-            node.type = 'vless';
-            node.uuid = user.id;
-            node.flow = user.flow || '';
-            node.packet_encoding = 'xudp';
-        } else if (item.protocol === 'vmess') {
-            node.type = 'vmess';
-            node.uuid = user.id;
-            node.alter_id = user.alterId || 0;
-            node.security = user.security || 'auto';
-        } else { return null; }
-
-        // TLS
-        const security = stream.security;
-        if (security === 'tls' || security === 'reality') {
-            const tlsSets = stream.tlsSettings || stream.realitySettings || {};
-            node.tls = {
-                enabled: true,
-                server_name: tlsSets.serverName || tlsSets.sni,
-                insecure: tlsSets.allowInsecure || false,
-                utls: { enabled: true, fingerprint: tlsSets.fingerprint || 'chrome' }
-            };
-            if (security === 'reality') {
-                node.tls.reality = {
-                    enabled: true,
-                    public_key: tlsSets.publicKey,
-                    short_id: tlsSets.shortId
-                };
-            }
-        }
-
-        // Transport
-        if (stream.network === 'ws') {
-            node.transport = {
-                type: 'ws',
-                path: stream.wsSettings?.path,
-                headers: stream.wsSettings?.headers
-            };
-        } else if (stream.network === 'grpc') {
-            node.transport = {
-                type: 'grpc',
-                service_name: stream.grpcSettings?.serviceName
-            };
-        }
-        return node;
-    }
-
-    // 4. Surge Line (Tag = type, server, port, args)
-    if (type === 'surge') {
-        const [tagInfo, ...rest] = item.split('=');
-        const tag = tagInfo.trim();
-        const details = rest.join('=').trim().split(',').map(s => s.trim());
-        const protocol = details[0];
-        const server = details[1];
-        const port = details[2];
-        
-        const args = {};
-        details.slice(3).forEach(part => {
-            const [k, v] = part.split('=');
-            if(k && v) args[k.trim()] = v.trim();
-            else if (k) args[k.trim()] = "true"; // flag style
-        });
-
-        const node = { tag, server, server_port: parseInt(port) };
-        
-        if (protocol === 'vless') {
-            node.type = 'vless';
-            node.uuid = args.username; // Surge uses username for uuid in vless context often
-            node.flow = args.flow || '';
-            node.packet_encoding = 'xudp';
-            
-            if (args.tls === 'true') {
+            } else if (p.type === 'trojan') {
+                node.type = 'trojan';
+                node.server = p.server;
+                node.server_port = p.port;
+                node.password = p.password;
                 node.tls = {
                     enabled: true,
-                    server_name: args.sni,
-                    insecure: args['skip-cert-verify'] === 'true'
+                    server_name: p.sni || p.server,
+                    utls: { enabled: true, fingerprint: p.fingerprint || 'chrome' },
+                    insecure: p['skip-cert-verify'] || false
                 };
-            }
-            if (args.ws === 'true') {
-                node.transport = {
-                    type: 'ws',
-                    path: args['ws-path'],
-                    headers: args['ws-headers'] ? { Host: args['ws-headers'].split(':')[1] } : {}
-                };
-            }
-        } 
-        // Add other surge protocols (ss, vmess, trojan) logic here if needed
-        else { return null; }
-        
-        return node;
-    }
-
-    return null;
-};
-
-/**
- * 智能解析入口
- */
-function parseMixedInput(text) {
-    const rawLines = text.split(/\r?\n/);
-    const nodes = [];
-
-    // 状态机：缓存块
-    let buffer = [];
-    let state = 'IDLE'; // IDLE, YAML_BLOCK, JSON_BLOCK
-
-    const processBuffer = () => {
-        if (buffer.length === 0) return;
-        const block = buffer.join('\n').trim();
-        
-        // 尝试作为 JSON 解析
-        if (block.startsWith('{')) {
-            try {
-                const json = JSON.parse(block);
-                // 判定是 Singbox 还是 Xray
-                if (json.type && json.server) nodes.push(transformToSingbox(json, 'singbox'));
-                else if (json.protocol && json.settings) nodes.push(transformToSingbox(json, 'xray'));
-                else if (json.outbounds) json.outbounds.forEach(o => nodes.push(transformToSingbox(o, 'singbox'))); // 完整singbox配置
-            } catch (e) {}
-        }
-        // 尝试作为 YAML 解析
-        else if (block.includes(':') && !block.includes('=')) { // 简单的 YAML 启发式
-            try {
-                // 如果是列表项 ( - name: ...)
-                if (block.trim().startsWith('-')) {
-                    const yaml = jsyaml.load(block);
-                    if (Array.isArray(yaml)) yaml.forEach(i => nodes.push(transformToSingbox(i, 'clash')));
-                } 
-                // 如果是单对象 ( name: ...)
-                else {
-                    const yaml = jsyaml.load(block);
-                    if (yaml.name && yaml.server && yaml.type) nodes.push(transformToSingbox(yaml, 'clash'));
-                    else if (yaml.proxies) yaml.proxies.forEach(i => nodes.push(transformToSingbox(i, 'clash')));
+                if(p.network === 'ws') {
+                    node.transport = { type: 'ws', path: p['ws-opts']?.path, headers: p['ws-opts']?.headers };
                 }
-            } catch (e) {}
+            } else if (p.type === 'hysteria2') {
+                node.type = 'hysteria2';
+                node.server = p.server;
+                node.server_port = p.port;
+                node.password = p.password;
+                node.tls = {
+                    enabled: true,
+                    server_name: p.sni || p.server,
+                    utls: { enabled: true, fingerprint: p.fingerprint || 'chrome' },
+                    insecure: p['skip-cert-verify'] || false
+                };
+                if(p.obfs) {
+                    node.obfs = { type: 'salamander', password: p['obfs-password'] }; // Clash meta naming convention vary
+                }
+            } else if (p.type === 'vless') {
+                // Clash Meta VLESS
+                node.type = 'vless';
+                node.server = p.server;
+                node.server_port = p.port;
+                node.uuid = p.uuid;
+                node.flow = p.flow || '';
+                node.packet_encoding = 'xudp';
+                
+                if (p.tls) {
+                    node.tls = { 
+                        enabled: true, 
+                        server_name: p.servername || p.server,
+                        utls: { enabled: true, fingerprint: p.fingerprint || 'chrome' },
+                        insecure: p['skip-cert-verify'] || false
+                    };
+                    if (p['reality-opts']) {
+                        node.tls.reality = {
+                            enabled: true,
+                            public_key: p['reality-opts']['public-key'],
+                            short_id: p['reality-opts']['short-id']
+                        };
+                    }
+                }
+                if (p.network === 'ws') {
+                     node.transport = { type: 'ws', path: p['ws-opts']?.path || '/', headers: p['ws-opts']?.headers };
+                } else if (p.network === 'grpc') {
+                     node.transport = { type: 'grpc', service_name: p['grpc-opts']?.['grpc-service-name'] };
+                }
+            } else {
+                return null; // 不支持的类型或Direct/Reject
+            }
+            return node;
+        }
+
+        // ==========================================
+        // 4. 通用链接解析 (vless://...)
+        // ==========================================
+        function parseShareLink(line) {
+            try {
+                const url = new URL(line);
+                const tag = decodeURIComponent(url.hash.slice(1));
+                const params = Object.fromEntries(url.searchParams);
+                const node = { tag: tag || 'Node', server: url.hostname, server_port: parseInt(url.port) };
+
+                if (line.startsWith('vless://')) {
+                    node.type = 'vless';
+                    node.uuid = url.username;
+                    node.flow = params.flow || '';
+                    node.packet_encoding = 'xudp';
+                } else if (line.startsWith('trojan://')) {
+                    node.type = 'trojan';
+                    node.password = url.username;
+                } else if (line.startsWith('vmess://')) {
+                    // Base64 Vmess
+                    return JSON.parse(safeBase64Decode(line.slice(8))); // 简化处理，由后续逻辑统一映射
+                } else {
+                    return null;
+                }
+
+                // Common TLS & Transport for VLESS/Trojan
+                if (params.security === 'tls' || params.security === 'reality') {
+                    node.tls = { enabled: true, server_name: params.sni || params.host || params.peer, utls: { enabled: true, fingerprint: params.fp || 'chrome' }};
+                    if (params.security === 'reality') {
+                        node.tls.reality = { enabled: true, public_key: params.pbk, short_id: params.sid };
+                    }
+                }
+                if (params.type === 'ws') {
+                    node.transport = { type: 'ws', path: params.path, headers: params.host ? {Host:params.host} : {} };
+                } else if (params.type === 'grpc') {
+                    node.transport = { type: 'grpc', service_name: params.serviceName };
+                }
+                
+                return node;
+            } catch { return null; }
+        }
+
+        // ==========================================
+        // 5. 主转换逻辑
+        // ==========================================
+        function convert() {
+            const input = document.getElementById('inputArea').value.trim();
+            if (!input) return;
+
+            setStatus('正在解析...');
+            let nodes = [];
+            let sourceType = 'Unknown';
+
+            try {
+                // 策略 1: 尝试解析为 Clash YAML
+                if (input.includes('proxies:') || input.includes('proxy-groups:')) {
+                    try {
+                        const yamlObj = jsyaml.load(input);
+                        if (yamlObj && yamlObj.proxies) {
+                            sourceType = 'Clash YAML';
+                            nodes = yamlObj.proxies.map(mapClashToSingbox).filter(n => n);
+                        }
+                    } catch (e) { console.log('YAML parse failed', e); }
+                }
+
+                // 策略 2: 尝试解析为 JSON (Sing-box/Xray)
+                if (nodes.length === 0 && (input.startsWith('{') || input.startsWith('['))) {
+                    try {
+                        const json = JSON.parse(input);
+                        // Sing-box
+                        if (json.outbounds) {
+                            sourceType = 'Sing-box JSON';
+                            // 提取非 selector/urltest/direct 的节点
+                            nodes = json.outbounds.filter(o => 
+                                o.type !== 'selector' && o.type !== 'urltest' && o.type !== 'direct' && o.type !== 'block' && o.type !== 'dns'
+                            );
+                        } 
+                        // Xray
+                        else if (json.inbounds && json.outbounds) {
+                            sourceType = 'Xray JSON';
+                             // Xray 到 Sing-box 需要额外映射，这里暂且假设已经是 sing-box 格式或非常接近
+                             // 实际应做字段清洗，为简化直接提取
+                             nodes = json.outbounds.filter(o => o.protocol !== 'freedom' && o.protocol !== 'blackhole');
+                        }
+                        // 纯数组
+                        else if (Array.isArray(json)) {
+                            sourceType = 'JSON Array';
+                            // 假设是 Sing-box node 数组
+                            nodes = json;
+                        }
+                    } catch (e) { console.log('JSON parse failed', e); }
+                }
+
+                // 策略 3: 链接 / Base64 / 混合文本
+                if (nodes.length === 0) {
+                    let text = input;
+                    // 检测是否纯 Base64
+                    if (!text.includes('://') && !text.includes('proxies:')) {
+                        const decoded = safeBase64Decode(text);
+                        if (decoded && (decoded.includes('vmess://') || decoded.includes('vless://'))) {
+                            text = decoded;
+                            sourceType = 'Base64 Sub';
+                        }
+                    } else {
+                        sourceType = 'Links / Text';
+                    }
+
+                    const lines = text.split(/[\r\n]+/);
+                    lines.forEach(line => {
+                        line = line.trim();
+                        if(!line) return;
+                        
+                        // vmess:// base64 json format special case
+                        if (line.startsWith('vmess://')) {
+                             try {
+                                 const b64 = line.replace('vmess://', '');
+                                 const vObj = JSON.parse(safeBase64Decode(b64));
+                                 // 构造个伪 Clash 对象丢给转换器
+                                 const fakeClash = {
+                                     type: 'vmess',
+                                     name: vObj.ps,
+                                     server: vObj.add,
+                                     port: vObj.port,
+                                     uuid: vObj.id,
+                                     alterId: vObj.aid,
+                                     cipher: vObj.scy,
+                                     network: vObj.net,
+                                     tls: vObj.tls === 'tls',
+                                     servername: vObj.sni || vObj.host,
+                                     "ws-opts": { path: vObj.path, headers: { Host: vObj.host } },
+                                     "grpc-opts": { "grpc-service-name": vObj.path }
+                                 };
+                                 const sbNode = mapClashToSingbox(fakeClash);
+                                 if(sbNode) nodes.push(sbNode);
+                             } catch(e) {}
+                        } else {
+                            const node = parseShareLink(line);
+                            if (node) nodes.push(node);
+                        }
+                    });
+                }
+
+                if (nodes.length === 0) {
+                    setStatus('解析失败或无有效节点', 'error');
+                    return;
+                }
+
+                // ============================
+                // 生成最终配置
+                // ============================
+                const finalConfig = JSON.parse(JSON.stringify(TEMPLATE));
+                const nodeTags = [];
+                const dedupedNodes = [];
+                const tagCount = {};
+
+                // 去重与 Tag 处理
+                nodes.forEach(node => {
+                    let tag = node.tag;
+                    if (tagCount[tag]) {
+                        tagCount[tag]++;
+                        tag = `${tag} ${tagCount[tag]}`;
+                        node.tag = tag;
+                    } else {
+                        tagCount[tag] = 1;
+                    }
+                    nodeTags.push(tag);
+                    dedupedNodes.push(node);
+                });
+
+                // 静态 Outbounds (Selectors)
+                const staticOutbounds = [
+                    { "type": "direct", "tag": "DIRECT" },
+                    {
+                        "type": "selector",
+                        "tag": "proxy",
+                        "outbounds": ["auto", ...nodeTags, "DIRECT"],
+                        "default": "auto",
+                        "interrupt_exist_connections": false
+                    },
+                    {
+                        "type": "urltest",
+                        "tag": "auto",
+                        "outbounds": nodeTags,
+                        "url": "https://www.gstatic.com/generate_204",
+                        "interval": "10m",
+                        "tolerance": 50,
+                        "idle_timeout": "30m"
+                    },
+                    // 分流组
+                    ...["google", "apple", "telegram", "bilibili", "netflix", "bahamut", "youtube", "openai", "GLOBAL", "cn", "final"].map(tag => ({
+                        "type": "selector",
+                        "tag": tag,
+                        "outbounds": tag === "final" ? ["proxy", "DIRECT"] : ["proxy", "auto", "DIRECT", ...nodeTags], // 给分流组也加上节点选择能力
+                        "default": (tag === "cn" || tag === "apple" || tag === "bilibili") ? "DIRECT" : "proxy"
+                    }))
+                ];
+
+                finalConfig.outbounds = [...staticOutbounds, ...dedupedNodes];
+
+                document.getElementById('outputArea').value = JSON.stringify(finalConfig, null, 2);
+                setStatus(`已解析: ${sourceType}`, 'success');
+                document.getElementById('statsText').textContent = `节点数: ${dedupedNodes.length}`;
+
+            } catch (e) {
+                console.error(e);
+                setStatus('程序内部错误: ' + e.message, 'error');
+            }
+        }
+
+        function clearInput() {
+            document.getElementById('inputArea').value = '';
+            document.getElementById('outputArea').value = '';
+            setStatus('已清空');
+            document.getElementById('statsText').textContent = '节点数: 0';
+        }
+
+        function copyResult() {
+            const output = document.getElementById('outputArea');
+            if (output.value) {
+                output.select();
+                document.execCommand('copy');
+                setStatus('已复制到剪贴板', 'success');
+            }
         }
         
-        buffer = [];
-    };
-
-    for (let line of rawLines) {
-        line = line.trim();
-        if (!line) {
-            // 空行可能意味着块结束
-            processBuffer();
-            continue;
-        }
-
-        // Surge 格式检测 ( Tag = type, ...)
-        if (line.includes('=') && line.includes(',') && !line.startsWith('{') && !line.includes(': ')) {
-            processBuffer(); // 先处理之前的
-            const node = transformToSingbox(line, 'surge');
-            if (node) nodes.push(node);
-            continue;
-        }
-
-        // 链接检测
-        if (line.includes('://')) {
-            processBuffer();
-            // 这里为了简化，假设已经有一个通用的 parseLink 函数（或者调用之前的逻辑）
-            // 复用之前的 parseLink 逻辑，或者简单处理
-            // 为保持代码简洁，这里略过 parseLink 的具体实现，实际使用时应包含
-            continue;
-        }
-
-        // 积累 Buffer
-        buffer.push(line);
-        
-        // 简单的闭合检测 (JSON)
-        if (line === '}' || line === '],') {
-            processBuffer();
-        }
-    }
-    processBuffer(); // 处理最后剩余的
-
-    return nodes.filter(n => n !== null);
-}
-
-// 简单的链接解析器补丁 (支持 vmess/vless 链接)
-function parseLinkSimple(text) {
-    // 实际项目中应包含完整的链接解析逻辑
-    return []; 
-}
-
-/**
- * 主程序
- */
-function convert() {
-    const input = document.getElementById('input').value;
-    if (!input.trim()) return;
-
-    // 1. 预处理：尝试 Base64 解码
-    let textToParse = input;
-    if (!input.includes('\n') && !input.includes(' ') && input.length > 50) {
-        const decoded = safeBase64Decode(input);
-        if (decoded !== input) textToParse = decoded;
-    }
-
-    // 2. 混合解析
-    const nodes = parseMixedInput(textToParse);
-
-    if (nodes.length === 0) {
-        updateStatus('未识别到有效节点', 'error');
-        return;
-    }
-
-    // 3. 组装最终 JSON
-    const config = JSON.parse(JSON.stringify(BASE_TEMPLATE));
-    const tags = nodes.map(n => n.tag);
-    
-    // 生成 Outbounds (Selectors + Nodes)
-    const selectors = [
-        { "type": "direct", "tag": "DIRECT" },
-        { "type": "selector", "tag": "proxy", "outbounds": ["auto", ...tags, "DIRECT"], "default": "auto" },
-        { "type": "urltest", "tag": "auto", "outbounds": tags, "url": "https://www.gstatic.com/generate_204", "interval": "10m", "tolerance": 50 }
-    ];
-
-    // 添加策略组 (Google, Telegram...)
-    ["google", "apple", "telegram", "bilibili", "netflix", "bahamut", "youtube", "openai", "GLOBAL", "cn"].forEach(id => {
-        selectors.push({
-            "type": "selector",
-            "tag": id,
-            "outbounds": ["proxy", "auto", "DIRECT", ...tags],
-            "default": "proxy"
+        // 自动触发转换 (可选)
+        document.getElementById('inputArea').addEventListener('paste', () => {
+            setTimeout(convert, 200);
         });
-    });
-    selectors.push({ "type": "selector", "tag": "final", "outbounds": ["proxy", "DIRECT"], "default": "proxy" });
-
-    config.outbounds = [...selectors, ...nodes];
-
-    // 4. 输出
-    document.getElementById('output').value = JSON.stringify(config, null, 2);
-    document.getElementById('nodeCount').textContent = `节点数: ${nodes.length}`;
-    updateStatus(`成功转换 ${nodes.length} 个节点`, 'success');
-}
-
-function clearInput() {
-    document.getElementById('input').value = '';
-    document.getElementById('output').value = '';
-    document.getElementById('nodeCount').textContent = '节点数: 0';
-    updateStatus('已清空');
-}
-
-function copyResult() {
-    document.getElementById('output').select();
-    document.execCommand('copy');
-    updateStatus('已复制!', 'success');
-}
-
-// 自动转换监听
-document.getElementById('input').addEventListener('input', () => {
-    if (document.getElementById('autoMode').checked) {
-        clearTimeout(window.debounce);
-        window.debounce = setTimeout(convert, 500);
-    }
-});
-
-</script>
+    </script>
 </body>
 </html>
