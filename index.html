@@ -1,199 +1,434 @@
-<!-- START OF FILE 转换_1.13.0_内核版.html -->
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sing-box Converter (1.13.0 Config)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sing-box</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg: #0f0f12;
-            --surface: #1b1b1f;
-            --surface-hover: #27272c;
-            --primary: #5e6ad2;
-            --text-main: #ededed;
-            --text-sub: #a1a1aa;
-            --border: #2e2e32;
-            --success: #22c55e;
-            --warning: #f59e0b;
+            --bg-gradient: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --primary: #6d5dfc;
+            --primary-hover: #5b4ef0;
+            --text-primary: #f0f0f0;
+            --text-secondary: #b0b0c0;
+            --success: #4cd964;
+            --warning: #ffcc00;
+            --error: #ff3b30;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            --glow: 0 0 20px rgba(109, 93, 252, 0.3);
+            --header-height: 80px;
+            --footer-height: 60px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg);
-            color: var(--text-main);
-            margin: 0;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg-gradient);
+            color: var(--text-primary);
             height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            overflow: hidden; /* PC端默认禁止body滚动，由内部容器滚动 */
         }
 
-        .navbar {
-            padding: 0 24px;
-            height: 60px;
+        /* ====================
+           自定义滚动条 (修复auto问题)
+           ==================== */
+        ::-webkit-scrollbar {
+            width: 8px;    /* 修复：使用固定像素而不是 auto */
+            height: 8px;   /* 修复：使用固定像素而不是 auto */
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(109, 93, 252, 0.3);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(109, 93, 252, 0.6);
+        }
+
+        /* 头部区域 */
+        .header {
+            height: var(--header-height);
+            padding: 0 2rem;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            border-bottom: 1px solid var(--border);
-            background: rgba(15, 15, 18, 0.8);
-            backdrop-filter: blur(12px);
-            z-index: 10;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(10px);
+            background: rgba(26, 26, 46, 0.9);
+            z-index: 100;
+            flex-shrink: 0;
         }
 
-        .navbar h1 {
-            font-size: 18px;
-            font-weight: 600;
-            margin: 0;
+        .logo {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 1rem;
         }
 
-        .tag {
-            font-size: 11px;
-            background: var(--surface-hover);
-            padding: 2px 8px;
+        .logo-icon {
+            background: var(--primary);
+            width: 40px;
+            height: 40px;
             border-radius: 12px;
-            color: var(--text-sub);
-            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: var(--glow);
         }
 
-        .main-content {
+        .logo-text {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .version-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(109, 93, 252, 0.3);
+        }
+
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .btn-secondary:hover { background: rgba(255, 255, 255, 0.1); }
+        .btn-secondary:active { transform: scale(0.98); }
+
+        /* 主内容区域 - PC端布局 */
+        .main {
             flex: 1;
             display: flex;
-            padding: 20px;
-            gap: 20px;
-            overflow: hidden;
+            padding: 1.5rem 2rem;
+            gap: 1.5rem;
+            overflow: hidden; /* 内部卡片滚动 */
+            max-width: 1920px;
+            margin: 0 auto;
+            width: 100%;
         }
 
-        .panel {
+        .card {
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: var(--surface);
-            border-radius: 12px;
-            border: 1px solid var(--border);
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
             overflow: hidden;
+            box-shadow: var(--shadow);
+            height: 100%; /* PC端占满高度 */
         }
 
-        .panel-header {
-            padding: 12px 16px;
+        .card-header {
+            padding: 1rem 1.5rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(255,255,255,0.02);
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.2);
+            flex-shrink: 0;
         }
 
-        .panel-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--text-sub);
+        .card-title {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 0.8rem;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .card-icon {
+            color: var(--primary);
+            font-size: 1.1rem;
+        }
+
+        .editor-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
 
         .editor {
             flex: 1;
+            width: 100%;
             background: transparent;
             border: none;
-            padding: 16px;
-            color: #d4d4d4;
-            font-family: 'JetBrains Mono', 'Consolas', monospace;
-            font-size: 13px;
-            line-height: 1.5;
+            padding: 1.5rem;
+            color: #e0e0e0;
+            font-family: 'JetBrains Mono', Consolas, monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
             resize: none;
             outline: none;
-            white-space: pre;
         }
 
-        .btn {
-            background: var(--surface-hover);
-            border: 1px solid var(--border);
-            color: var(--text-main);
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 12px;
-            transition: all 0.2s;
+        .editor::placeholder { color: rgba(255, 255, 255, 0.2); }
+
+        .status-indicator {
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 0.4rem;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            pointer-events: none;
+            backdrop-filter: blur(4px);
         }
 
-        .btn:hover { background: #333; border-color: #444; }
-        .btn-primary { background: var(--primary); border-color: var(--primary); color: white; }
-        .btn-primary:hover { background: #4e5ac0; }
-
-        .status-bar {
-            padding: 0 24px;
-            height: 36px;
-            background: var(--surface);
-            border-top: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 12px;
-            color: var(--text-sub);
-        }
-
-        .format-badge {
-            display: inline-block;
-            width: 8px;
-            height: 8px;
+        .status-dot {
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
-            background: var(--text-sub);
-            margin-right: 6px;
+            background: var(--text-secondary);
         }
-        .format-badge.active { background: var(--success); }
-        .format-badge.error { background: var(--warning); }
+        .status-dot.active { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .status-dot.error { background: var(--error); box-shadow: 0 0 8px var(--error); }
 
-        @media (max-width: 768px) {
-            .main-content { flex-direction: column; }
-            .navbar { padding: 0 16px; }
+        /* 底部状态栏 */
+        .footer {
+            height: var(--footer-height);
+            padding: 0 2rem;
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .stats { display: flex; gap: 2rem; }
+        .stat-item { color: var(--text-secondary); display: flex; gap: 0.5rem; align-items: center; }
+        .stat-value { color: #fff; font-weight: 600; font-family: monospace; }
+        .hint { color: var(--text-secondary); opacity: 0.7; }
+
+        /* ====================
+           移动端专属样式 (独立界面逻辑)
+           ==================== */
+        @media (max-width: 1024px) {
+            body {
+                height: auto; /* 允许页面整体滚动 */
+                min-height: 100vh;
+                overflow-y: auto; /* 恢复body滚动 */
+            }
+
+            /* 移动端头部 */
+            .header {
+                height: auto;
+                flex-direction: column;
+                padding: 1.5rem 1rem;
+                gap: 1.2rem;
+                position: sticky; /* 头部吸顶 */
+                top: 0;
+                background: rgba(26, 26, 46, 0.95);
+            }
+
+            .logo {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .version-badge { display: none; /* 移动端隐藏版本号节省空间 */ }
+
+            .controls {
+                width: 100%;
+                display: grid;
+                grid-template-columns: 1fr 1.5fr 1fr; /* 中间转换按钮大一点 */
+                gap: 0.8rem;
+            }
+
+            .btn {
+                justify-content: center;
+                padding: 0.8rem 0;
+                font-size: 0.85rem;
+                flex-direction: column; /* 图标文字上下排列 */
+                gap: 0.3rem;
+            }
+            
+            .btn i { font-size: 1.1rem; }
+
+            /* 移动端主区域 */
+            .main {
+                flex-direction: column;
+                padding: 1rem;
+                gap: 1.5rem;
+                overflow: visible; /* 让卡片自然撑开 */
+            }
+
+            .card {
+                height: auto; /* 高度自适应 */
+                min-height: 400px; /* 保证最小高度 */
+                border-radius: 12px;
+            }
+
+            .card-header {
+                padding: 0.8rem 1rem;
+                background: rgba(255, 255, 255, 0.03);
+            }
+
+            .card-title { font-size: 0.9rem; }
+            .card-icon { display: none; /* 移动端隐藏卡片图标 */ }
+
+            .editor {
+                font-size: 14px; /* 移动端字体调整 */
+                padding: 1rem;
+                min-height: 350px; /* 移动端输入框最小高度 */
+            }
+
+            /* 移动端底部 */
+            .footer {
+                height: auto;
+                padding: 1rem;
+                flex-direction: column;
+                gap: 0.8rem;
+                text-align: center;
+                margin-bottom: 1rem;
+            }
+
+            .stats {
+                gap: 1rem;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+            
+            .hint { display: none; /* 移动端隐藏提示信息 */ }
         }
     </style>
 </head>
 <body>
 
-    <div class="navbar">
-        <h1>
-            Sing-box
-            <span class="tag">指定1.13.0-rc.1</span>
-        </h1>
-        <div style="display: flex; gap: 10px;">
-            <button class="btn btn-primary" onclick="convert()">⚡ 转换配置</button>
+    <div class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-exchange-alt"></i>
+            </div>
+            <div class="logo-text">Sing-box</div>
+            <div class="version-badge">指定1.13.0-rc.1版本</div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-secondary" onclick="clearInput()">
+                <i class="fas fa-trash-alt"></i> <span>清空</span>
+            </button>
+            <button class="btn btn-primary" onclick="convert()">
+                <i class="fas fa-bolt"></i> <span>转换配置</span>
+            </button>
+            <button class="btn btn-secondary" onclick="copyResult()">
+                <i class="fas fa-copy"></i> <span>复制</span>
+            </button>
         </div>
     </div>
 
-    <div class="main-content">
-        <div class="panel">
-            <div class="panel-header">
-                <span class="panel-title">📝 输入 (支持 SS/Trojan/VLESS/VMess/Clash YAML)</span>
-                <button class="btn" onclick="clearInput()">清空</button>
+    <div class="main">
+        <!-- 输入卡片 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon"><i class="fas fa-code"></i></div>
+                    <div>输入 (Clash/URI/JSON)</div>
+                </div>
             </div>
-            <textarea id="inputArea" class="editor" placeholder="在此粘贴配置内容..."></textarea>
+            <div class="editor-container">
+                <div class="status-indicator" id="inputStatus">
+                    <div class="status-dot"></div>
+                    <span>等待输入</span>
+                </div>
+                <textarea id="inputArea" class="editor" placeholder="在此粘贴您的配置...&#10;支持格式：&#10;• VLESS/VMess/Trojan/SS 链接&#10;• Clash 订阅内容&#10;• 混合节点列表"></textarea>
+            </div>
         </div>
 
-        <div class="panel">
-            <div class="panel-header">
-                <span class="panel-title">⚙️ 输出 (Sing-box JSON)</span>
-                <button class="btn" onclick="copyResult()">📋 复制</button>
+        <!-- 输出卡片 -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title">
+                    <div class="card-icon"><i class="fas fa-cogs"></i></div>
+                    <div>输出 (Sing-box JSON)</div>
+                </div>
             </div>
-            <textarea id="outputArea" class="editor" readonly placeholder="等待转换..."></textarea>
+            <div class="editor-container">
+                <div class="status-indicator" id="outputStatus">
+                    <div class="status-dot"></div>
+                    <span>等待结果</span>
+                </div>
+                <textarea id="outputArea" class="editor" readonly placeholder="转换后的配置将显示在这里..."></textarea>
+            </div>
         </div>
     </div>
 
-    <div class="status-bar">
-        <div style="display: flex; align-items: center;">
-            <span id="statusBadge" class="format-badge"></span>
-            <span id="statusText">等待输入</span>
+    <div class="footer">
+        <div class="stats">
+            <div class="stat-item">
+                <i class="fas fa-server"></i>
+                <span>节点: <span id="nodeCount" class="stat-value">0</span></span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-code-branch"></i>
+                <span>Core: <span class="stat-value">1.13.0-rc.1</span></span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-clock"></i>
+                <span>状态: <span id="statusText" class="stat-value">就绪</span></span>
+            </div>
         </div>
-        <span id="statsText">节点数: 0</span>
+        <div class="hint">
+            <i class="fas fa-lightbulb"></i> 提示: 转换完全在本地进行，不会上传您的配置
+        </div>
     </div>
 
     <script>
@@ -885,10 +1120,37 @@
         }
 
         function setStatus(text, type = 'normal') {
-            const badge = document.getElementById('statusBadge');
-            const txt = document.getElementById('statusText');
-            txt.textContent = text;
-            badge.className = 'format-badge ' + (type === 'success' ? 'active' : (type === 'error' ? 'error' : ''));
+            const statusText = document.getElementById('statusText');
+            const inputStatus = document.getElementById('inputStatus');
+            const outputStatus = document.getElementById('outputStatus');
+            
+            statusText.textContent = text;
+            
+            if (type === 'success') {
+                statusText.style.color = 'var(--success)';
+                inputStatus.querySelector('.status-dot').className = 'status-dot active';
+                inputStatus.querySelector('span').textContent = '内容已输入';
+                outputStatus.querySelector('.status-dot').className = 'status-dot active';
+                outputStatus.querySelector('span').textContent = '转换完成';
+            } else if (type === 'error') {
+                statusText.style.color = 'var(--error)';
+                inputStatus.querySelector('.status-dot').className = 'status-dot error';
+                inputStatus.querySelector('span').textContent = '输入错误';
+                outputStatus.querySelector('.status-dot').className = 'status-dot';
+                outputStatus.querySelector('span').textContent = '等待转换';
+            } else {
+                statusText.style.color = 'var(--text-primary)';
+                const inputText = document.getElementById('inputArea').value.trim();
+                if (inputText) {
+                    inputStatus.querySelector('.status-dot').className = 'status-dot active';
+                    inputStatus.querySelector('span').textContent = '内容已输入';
+                } else {
+                    inputStatus.querySelector('.status-dot').className = 'status-dot';
+                    inputStatus.querySelector('span').textContent = '等待输入';
+                }
+                outputStatus.querySelector('.status-dot').className = 'status-dot';
+                outputStatus.querySelector('span').textContent = '等待转换';
+            }
         }
 
         function processWsPath(pathStr) {
@@ -921,7 +1183,6 @@
             if(p.password) node.password = p.password;
             if(p.uuid) node.uuid = p.uuid;
             
-            // Helper for Clash WS
             const applyClashWs = (target, opts, headers) => {
                 const wsInfo = processWsPath(opts.path || '/');
                 target.transport = {
@@ -1040,7 +1301,6 @@
                 try {
                     uriObj = new URL(urlStr);
                 } catch(e) {
-                    // Handle broken hash
                     const hashIndex = urlStr.indexOf('#');
                     if (hashIndex !== -1) {
                         const preHash = urlStr.substring(0, hashIndex);
@@ -1219,13 +1479,15 @@
         // ==========================================
         function convert() {
             const rawInput = document.getElementById('inputArea').value.trim();
-            if (!rawInput) return;
+            if (!rawInput) {
+                setStatus('请输入配置内容', 'error');
+                return;
+            }
 
-            setStatus('正在解析混合内容...');
+            setStatus('正在解析混合内容...', 'normal');
             let nodes = [];
             
             let input = rawInput;
-            // 简单判断是否 base64
             if (!input.includes('://') && !input.includes('outbounds') && !input.includes('proxies:')) {
                 const decoded = safeBase64Decode(input);
                 if (decoded && (decoded.includes('://') || decoded.includes('proxies:'))) {
@@ -1233,7 +1495,6 @@
                 }
             }
 
-            // 尝试 YAML (Clash)
             const yamlLines = [];
             const lines = input.split(/\r?\n/);
             lines.forEach(line => {
@@ -1256,7 +1517,6 @@
                 } catch (e) { console.warn("YAML fragment parse error", e); }
             }
 
-            // 尝试 JSON (Sing-box片段)
             if (input.includes('"outbounds"')) {
                 try {
                     let jsonParsed = false;
@@ -1284,7 +1544,6 @@
                 } catch (e) { console.warn("JSON fragment parse error", e); }
             }
 
-            // 尝试 URI
             lines.forEach(line => {
                 if (line.trim().startsWith('- {')) return;
                 const node = parseURI(line);
@@ -1296,7 +1555,6 @@
                 return;
             }
 
-            // 去重与标签重命名
             const uniqueNodes = [];
             const tagCounts = {};
 
@@ -1312,36 +1570,31 @@
                 uniqueNodes.push(node);
             });
 
-            // 复制模板
             const finalConfig = JSON.parse(JSON.stringify(TEMPLATE));
             const nodeTags = uniqueNodes.map(n => n.tag);
             
-            // 1. 更新 'proxy' 选择器 (添加所有节点 + auto + direct)
-            // 注意：新模板中的直连标签是小写 "direct"
             const proxySelector = finalConfig.outbounds.find(o => o.tag === 'proxy');
             if (proxySelector && proxySelector.type === 'selector') {
                 proxySelector.outbounds = ["auto", ...nodeTags, "direct"];
             }
             
-            // 2. 更新 'auto' urltest (添加所有节点)
             const autoUrlTest = finalConfig.outbounds.find(o => o.tag === 'auto');
             if (autoUrlTest && autoUrlTest.type === 'urltest') {
                 autoUrlTest.outbounds = nodeTags;
             }
 
-            // 3. 将新节点添加到 outbounds 列表末尾
             finalConfig.outbounds.push(...uniqueNodes);
 
             document.getElementById('outputArea').value = JSON.stringify(finalConfig, null, 2);
-            setStatus(`转换成功 (来源混合)`, 'success');
-            document.getElementById('statsText').textContent = `节点数: ${uniqueNodes.length}`;
+            setStatus(`成功转换 ${uniqueNodes.length} 个节点`, 'success');
+            document.getElementById('nodeCount').textContent = uniqueNodes.length;
         }
 
         function clearInput() {
             document.getElementById('inputArea').value = '';
             document.getElementById('outputArea').value = '';
-            setStatus('已清空');
-            document.getElementById('statsText').textContent = '节点数: 0';
+            setStatus('已清空', 'normal');
+            document.getElementById('nodeCount').textContent = '0';
         }
 
         function copyResult() {
@@ -1349,9 +1602,15 @@
             if (output.value) {
                 output.select();
                 document.execCommand('copy');
-                setStatus('已复制', 'success');
+                setStatus('已复制到剪贴板', 'success');
+            } else {
+                setStatus('没有内容可复制', 'error');
             }
         }
+
+        window.addEventListener('load', () => {
+            setStatus('就绪', 'normal');
+        });
     </script>
 </body>
 </html>
