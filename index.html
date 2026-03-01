@@ -433,15 +433,17 @@
 
     <script>
         // ==========================================
-        // 1. 核心模板 (基于 1.13.0.txt)
+        // 1. 核心模板 (已剔除个人隐私节点，仅保留基础路由)
         // ==========================================
         const TEMPLATE = {
+  "certificate": {
+          "store": "chrome"
+  },
   "dns": {
-    "servers": [
+    "servers":[
       {
-        "tag": "local",
-        "type": "https",
-        "server": "223.5.5.5"
+        "tag": "system",
+        "type": "local"
       },
       {
         "tag": "google",
@@ -467,11 +469,11 @@
         "inet6_range": "fc00::/18"
       }
     ],
-    "rules": [
+    "rules":[
       {
         "clash_mode": "Direct",
         "action": "route",
-        "server": "ali"
+        "server": "system"
       },
       {
         "clash_mode": "Global",
@@ -485,14 +487,14 @@
       {
         "rule_set": "cn_domain",
         "action": "route",
-        "server": "ali"
+        "server": "system"
       },
       {
         "rule_set": "geosite-cn",
-        "server": "ali"
+        "server": "system"
       },
       {
-        "rule_set": [
+        "rule_set":[
           "geosite-google",
           "geosite-netflix",
           "geosite-youtube"
@@ -535,11 +537,11 @@
     "interval": "30m",
     "detour": "direct"
   },
-  "inbounds": [
+  "inbounds":[
     {
       "type": "tun",
       "tag": "tun-in",
-      "address": [
+      "address":[
         "172.19.0.1/28"
       ],
       "mtu": 1280,
@@ -566,7 +568,7 @@
       "set_system_proxy": false
     }
   ],
-  "outbounds": [
+  "outbounds":[
     {
       "type": "direct",
       "tag": "direct"
@@ -574,7 +576,7 @@
     {
       "type": "selector",
       "tag": "proxy",
-      "outbounds": [
+      "outbounds":[
         "auto",
         "direct"
       ],
@@ -584,7 +586,7 @@
     {
       "type": "urltest",
       "tag": "auto",
-      "outbounds": [],
+      "outbounds":[],
       "url": "https://www.gstatic.com/generate_204",
       "interval": "3m",
       "tolerance": 50,
@@ -594,7 +596,7 @@
     {
       "type": "selector",
       "tag": "google",
-      "outbounds": [
+      "outbounds":[
         "proxy",
         "auto",
         "direct"
@@ -615,7 +617,7 @@
     {
       "type": "selector",
       "tag": "telegram",
-      "outbounds": [
+      "outbounds":[
         "proxy",
         "auto"
       ],
@@ -635,7 +637,7 @@
     {
       "type": "selector",
       "tag": "netflix",
-      "outbounds": [
+      "outbounds":[
         "proxy",
         "auto"
       ],
@@ -655,7 +657,7 @@
     {
       "type": "selector",
       "tag": "youtube",
-      "outbounds": [
+      "outbounds":[
         "proxy",
         "auto"
       ],
@@ -675,7 +677,7 @@
     {
       "type": "selector",
       "tag": "GLOBAL",
-      "outbounds": [
+      "outbounds":[
         "direct",
         "proxy",
         "auto"
@@ -686,7 +688,7 @@
     {
       "type": "selector",
       "tag": "cn",
-      "outbounds": [
+      "outbounds":[
         "direct",
         "proxy"
       ],
@@ -696,7 +698,7 @@
     {
       "type": "selector",
       "tag": "final",
-      "outbounds": [
+      "outbounds":[
         "proxy",
         "direct"
       ],
@@ -705,7 +707,7 @@
     }
   ],
   "route": {
-    "rules": [
+    "rules":[
       {
         "protocol": "quic",
         "action": "reject"
@@ -713,7 +715,7 @@
       {
         "type": "logical",
         "mode": "or",
-        "rules": [
+        "rules":[
           {
             "port": 53
           },
@@ -729,7 +731,7 @@
         "outbound": "telegram"
       },
       {
-        "rule_set": [
+        "rule_set":[
           "telegram_ip",
           "telegram_domain"
         ],
@@ -738,7 +740,7 @@
       },
       {
         "action": "sniff",
-        "sniffer": [
+        "sniffer":[
           "http",
           "tls",
           "quic",
@@ -828,7 +830,7 @@
         "outbound": "bilibili"
       },
       {
-        "rule_set": [
+        "rule_set":[
           "netflix_ip",
           "netflix_domain"
         ],
@@ -853,13 +855,13 @@
       {
         "type": "logical",
         "mode": "and",
-        "rules": [
+        "rules":[
           {
             "rule_set": "proxy_domain"
           },
           {
             "invert": true,
-            "rule_set": [
+            "rule_set":[
               "geosite-cn",
               "geosite-apple",
               "geosite-google",
@@ -872,7 +874,7 @@
         "outbound": "proxy"
       },
       {
-        "rule_set": [
+        "rule_set":[
           "google_ip",
           "google_domain"
         ],
@@ -880,7 +882,7 @@
         "outbound": "google"
       },
       {
-        "rule_set": [
+        "rule_set":[
           "apple_ip",
           "apple_domain"
         ],
@@ -888,7 +890,7 @@
         "outbound": "apple"
       },
       {
-        "rule_set": [
+        "rule_set":[
           "cn_ip",
           "cn_domain"
         ],
@@ -896,7 +898,7 @@
         "outbound": "cn"
       }
     ],
-    "rule_set": [
+    "rule_set":[
       {
         "tag": "geosite_ads",
         "type": "remote",
@@ -1090,7 +1092,7 @@
     "final": "proxy",
     "auto_detect_interface": true,
     "override_android_vpn": true,
-    "default_domain_resolver": "local"
+    "default_domain_resolver": "ali"
   },
   "experimental": {
     "clash_api": {
@@ -1287,7 +1289,7 @@
             if (!line) return null;
 
             try {
-                const protocols = ['vless://', 'vmess://', 'ss://', 'trojan://', 'hysteria2://'];
+                const protocols =['vless://', 'vmess://', 'ss://', 'trojan://', 'hysteria2://'];
                 let startIndex = -1;
                 for (let p of protocols) {
                     startIndex = line.indexOf(p);
@@ -1485,7 +1487,7 @@
             }
 
             setStatus('正在解析混合内容...', 'normal');
-            let nodes = [];
+            let nodes =[];
             
             let input = rawInput;
             if (!input.includes('://') && !input.includes('outbounds') && !input.includes('proxies:')) {
@@ -1495,7 +1497,7 @@
                 }
             }
 
-            const yamlLines = [];
+            const yamlLines =[];
             const lines = input.split(/\r?\n/);
             lines.forEach(line => {
                 const trimmed = line.trim();
@@ -1555,7 +1557,7 @@
                 return;
             }
 
-            const uniqueNodes = [];
+            const uniqueNodes =[];
             const tagCounts = {};
 
             nodes.forEach(node => {
@@ -1575,12 +1577,15 @@
             
             const proxySelector = finalConfig.outbounds.find(o => o.tag === 'proxy');
             if (proxySelector && proxySelector.type === 'selector') {
-                proxySelector.outbounds = ["auto", ...nodeTags, "direct"];
+                const existing = proxySelector.outbounds.filter(t => t !== 'auto' && t !== 'direct');
+                proxySelector.outbounds =["auto", ...nodeTags, ...existing, "direct"];
             }
             
             const autoUrlTest = finalConfig.outbounds.find(o => o.tag === 'auto');
             if (autoUrlTest && autoUrlTest.type === 'urltest') {
-                autoUrlTest.outbounds = nodeTags;
+                const existing = autoUrlTest.outbounds ||[];
+                // 去重并合并
+                autoUrlTest.outbounds = Array.from(new Set([...nodeTags, ...existing]));
             }
 
             finalConfig.outbounds.push(...uniqueNodes);
