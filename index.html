@@ -421,7 +421,7 @@
 
     <script>
         // ==========================================
-        // 1. 核心模板 (基于完美修复版结构，剔除硬编码节点，节点将动态注入)
+        // 1. 核心模板 (已替换为修复谷歌下载的最新config.json配置)
         // ==========================================
         const TEMPLATE = {
   "log": {
@@ -478,11 +478,6 @@
         "action": "reject"
       },
       {
-        "rule_set": "cn_domain",
-        "action": "route",
-        "server": "ali"
-      },
-      {
         "rule_set":[
           "google_domain",
           "netflix_domain",
@@ -490,6 +485,11 @@
         ],
         "action": "route",
         "server": "google"
+      },
+      {
+        "rule_set": "cn_domain",
+        "action": "route",
+        "server": "ali"
       },
       {
         "rule_set":[
@@ -518,7 +518,7 @@
     {
       "type": "tun",
       "tag": "tun-in",
-      "address":[
+      "address": [
         "172.19.0.1/28"
       ],
       "mtu": 1280,
@@ -601,7 +601,7 @@
     {
       "type": "selector",
       "tag": "bilibili",
-      "outbounds":[
+      "outbounds": [
         "direct",
         "proxy"
       ],
@@ -611,7 +611,7 @@
     {
       "type": "selector",
       "tag": "netflix",
-      "outbounds": [
+      "outbounds":[
         "proxy",
         "auto"
       ],
@@ -621,7 +621,7 @@
     {
       "type": "selector",
       "tag": "bahamut",
-      "outbounds":[
+      "outbounds": [
         "proxy",
         "auto"
       ],
@@ -631,16 +631,6 @@
     {
       "type": "selector",
       "tag": "youtube",
-      "outbounds": [
-        "proxy",
-        "auto"
-      ],
-      "default": "proxy",
-      "interrupt_exist_connections": false
-    },
-    {
-      "type": "selector",
-      "tag": "openai",
       "outbounds":[
         "proxy",
         "auto"
@@ -650,8 +640,18 @@
     },
     {
       "type": "selector",
-      "tag": "GLOBAL",
+      "tag": "openai",
       "outbounds": [
+        "proxy",
+        "auto"
+      ],
+      "default": "proxy",
+      "interrupt_exist_connections": false
+    },
+    {
+      "type": "selector",
+      "tag": "GLOBAL",
+      "outbounds":[
         "direct",
         "proxy",
         "auto"
@@ -662,7 +662,7 @@
     {
       "type": "selector",
       "tag": "cn",
-      "outbounds":[
+      "outbounds": [
         "direct",
         "proxy"
       ],
@@ -672,7 +672,7 @@
     {
       "type": "selector",
       "tag": "final",
-      "outbounds": [
+      "outbounds":[
         "proxy",
         "direct"
       ],
@@ -743,17 +743,12 @@
         "outbound": "telegram"
       },
       {
-        "rule_set": [
+        "rule_set":[
           "telegram_ip",
           "telegram_domain"
         ],
         "action": "route",
         "outbound": "telegram"
-      },
-      {
-        "rule_set": "cn_domain",
-        "action": "route",
-        "outbound": "direct"
       },
       {
         "rule_set": "bilibili_domain",
@@ -832,7 +827,7 @@
         "outbound": "proxy"
       },
       {
-        "rule_set":[
+        "rule_set": [
           "google_ip",
           "google_domain"
         ],
@@ -840,7 +835,7 @@
         "outbound": "google"
       },
       {
-        "rule_set":[
+        "rule_set": [
           "apple_ip",
           "apple_domain"
         ],
@@ -848,7 +843,7 @@
         "outbound": "apple"
       },
       {
-        "rule_set":[
+        "rule_set": [
           "cn_ip",
           "cn_domain"
         ],
