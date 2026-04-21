@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>全能协议 → Sing-Box (新模板·去重)</title>
+    <title>多协议 → Sing-Box 1.13.9 配置生成</title>
     <style>
         * { box-sizing: border-box; margin: 0; }
         body {
@@ -44,6 +44,7 @@
             transition: 0.2s; box-shadow: inset 0 2px 4px rgba(0,0,0,0.01);
         }
         textarea:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.15); }
+        .input-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
         .button-group { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 8px; }
         .btn {
             background: white; border: 1px solid #cbd5e1; padding: 12px 26px;
@@ -68,18 +69,20 @@
         .example-btn { background: none; border: 1px dashed #94a3b8; padding: 6px 15px; border-radius: 40px; font-size: 0.8rem; cursor: pointer; }
         .example-btn:hover { background: #eef2ff; border-color: #3b82f6; }
         .toast-msg { color: #059669; font-weight: 500; margin-left: 12px; }
-        .protocol-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px; }
+        .protocol-tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px; align-items: center; }
         .tag { background: #e2e8f0; padding: 3px 10px; border-radius: 20px; font-size: 0.7rem; }
     </style>
 </head>
 <body>
 <div class="container">
-    <h1>🧬 多协议 → Sing-Box (1.13.8模板)</h1>
-    <div class="subtitle">VLESS · VMess · Trojan · SS · Hysteria2 · 自动去重 · 适配最新模板</div>
-
+    <h1>🧬 多协议 → Sing-Box 1.13.9 配置生成</h1>
+    <div class="subtitle">VLESS · VMess · Trojan · SS · Hysteria2 · 标签自动去重 · 完整兼容1.13.9稳定版</div>
     <div class="card">
         <div class="input-area">
-            <label>📥 粘贴节点链接 (每行一个，支持混合协议)</label>
+            <div class="input-header">
+                <label>📥 粘贴节点链接 (每行一个，支持混合协议)</label>
+                <button class="example-btn" id="sampleBtn">📋 填入示例节点</button>
+            </div>
             <textarea id="inputArea" placeholder="例如:&#10;vless://...&#10;vmess://...&#10;trojan://...&#10;ss://...&#10;hysteria2://..."></textarea>
             <div class="protocol-tags">
                 <span class="tag">✅ VLESS</span>
@@ -91,11 +94,9 @@
             <div class="button-group">
                 <button class="btn btn-primary" id="convertBtn">✨ 解析并生成配置</button>
                 <button class="btn btn-outline" id="clearBtn">🧹 清空</button>
-            
             </div>
         </div>
     </div>
-
     <div class="card">
         <div class="output-header">
             <label>📦 Sing-Box 配置 (可直接复制)</label>
@@ -108,35 +109,119 @@
         <div id="copyFeedback" style="height: 24px; margin-top: 8px;"></div>
     </div>
     <div class="footnote">
-        ⚡ 基于 1.13.8.txt 模板 · 节点注入 AUTO 组 · 标签自动去重 · 严格兼容
+        ⚡ 基于 1.13.9 稳定版官方模板 · 自动过滤无效传输配置 · 标签重复自动加序号 · 全字段严格对齐版本规范
     </div>
 </div>
 <script>
     (function(){
         "use strict";
-
-        // ---------- 基础模板 (源自 1.13.8.txt，已修正 JSON 语法) ----------
+        // ---------- 核心模板：1.13.9.txt 完整配置（仅outbounds动态生成） ----------
         const BASE_TEMPLATE = {
-            "log": { "level": "trace", "timestamp": true },
-            "ntp": { "enabled": true, "server": "ntp.aliyun.com", "server_port": 123, "interval": "30m" },
+            "log": {
+                "level": "trace",
+                "timestamp": true
+            },
+            "ntp": {
+                "enabled": true,
+                "server": "ntp.aliyun.com",
+                "server_port": 123,
+                "interval": "30m"
+            },
             "dns": {
                 "servers": [
-                    { "tag": "local", "type": "local" },
-                    { "tag": "alidns_udp", "type": "udp", "server": "223.5.5.5" },
-                    { "tag": "ggdns_doh", "type": "https", "server": "dns.google", "detour": "PROXY" },
-                    { "tag": "fakeip", "type": "fakeip", "inet4_range": "198.18.0.0/15" }
+                    {
+                        "tag": "local",
+                        "type": "local"
+                    },
+                    {
+                        "tag": "alidns_udp",
+                        "type": "udp",
+                        "server": "223.5.5.5"
+                    },
+                    {
+                        "tag": "ggdns_doh",
+                        "type": "https",
+                        "server": "dns.google",
+                        "detour": "PROXY"
+                    },
+                    {
+                        "tag": "fakeip",
+                        "type": "fakeip",
+                        "inet4_range": "198.18.0.0/15"
+                    }
                 ],
                 "rules": [
-                    { "domain_suffix": [".local", ".lan", "miwifi.com", "tplogin.cn", "router.asus.com", "tendawifi.com", "tplinkwifi.net"], "server": "local" },
-                    { "domain_suffix": ["app-measurement.com", "hm.baidu.com", "firebaselogging.googleapis.com", "firebaselogging-pa.googleapis.com", "beacons.gvt2.com", "beacons2.gvt2.com", "beacons3.gvt2.com", "tracking.miui.com"], "server": "alidns_udp" },
-                    { "rule_set": ["geosite_adguard", "geosite-category-ads-all"], "action": "reject" },
-                    { "query_type": ["SVCB", "HTTPS", "PTR"], "action": "reject" },
-                    { "rule_set": ["proxy", "games", "ai"], "query_type": ["A", "AAAA"], "server": "fakeip" },
-                    { "rule_set": ["proxy", "games", "ai"], "query_type": ["A", "AAAA"], "server": "ggdns_doh", "client_subnet": "119.134.100.0/24" },
-                    { "domain_suffix": ["market.xiaomi.com", "lancache.steamcontent.com"], "server": "alidns_udp" },
-                    { "domain_suffix": ["play.google.com", "ggpht.com", "googleusercontent.com", "android.com"], "server": "fakeip" },
-                    { "clash_mode": "direct", "server": "alidns_udp" },
-                    { "clash_mode": "global", "server": "fakeip" }
+                    {
+                        "domain_suffix": [
+                            ".local",
+                            ".lan",
+                            "miwifi.com",
+                            "tplogin.cn",
+                            "router.asus.com",
+                            "tendawifi.com",
+                            "tplinkwifi.net"
+                        ],
+                        "server": "local"
+                    },
+                    {
+                        "domain_suffix": [
+                            "app-measurement.com",
+                            "hm.baidu.com",
+                            "firebaselogging.googleapis.com",
+                            "firebaselogging-pa.googleapis.com",
+                            "beacons.gvt2.com",
+                            "beacons2.gvt2.com",
+                            "beacons3.gvt2.com",
+                            "tracking.miui.com"
+                        ],
+                        "server": "alidns_udp"
+                    },
+                    {
+                        "rule_set": [
+                            "geosite_adguard",
+                            "geosite-category-ads-all"
+                        ],
+                        "action": "reject"
+                    },
+                    {
+                        "query_type": [
+                            "SVCB",
+                            "HTTPS",
+                            "PTR"
+                        ],
+                        "action": "reject"
+                    },
+                    {
+                        "rule_set": ["proxy", "games", "ai"],
+                        "query_type": ["A", "AAAA"],
+                        "server": "fakeip",
+                        "rewrite_ttl": 300,
+                        "client_subnet": "119.134.100.0/24"
+                    },
+                    {
+                        "domain_suffix": [
+                            "market.xiaomi.com",
+                            "lancache.steamcontent.com"
+                        ],
+                        "server": "alidns_udp"
+                    },
+                    {
+                        "domain_suffix": [
+                            "play.google.com",
+                            "ggpht.com",
+                            "googleusercontent.com",
+                            "android.com"
+                        ],
+                        "server": "fakeip"
+                    },
+                    {
+                        "clash_mode": "direct",
+                        "server": "alidns_udp"
+                    },
+                    {
+                        "clash_mode": "global",
+                        "server": "fakeip"
+                    }
                 ],
                 "final": "alidns_udp",
                 "strategy": "ipv4_only",
@@ -144,78 +229,261 @@
                 "cache_capacity": 8000
             },
             "inbounds": [
-                { "type": "tun", "tag": "tun-in", "address": ["10.8.0.1/24"], "mtu": 1500, "stack": "mixed", "auto_route": true, "strict_route": true },
-                { "type": "mixed", "tag": "mixed-in", "listen": "127.0.0.1", "listen_port": 7890 }
-            ],
-            "outbounds": [
-                { "type": "direct", "tag": "DIRECT" },
                 {
-                    "type": "selector", "tag": "PROXY",
-                    "outbounds": ["AUTO", "DIRECT"],
-                    "default": "AUTO",
-                    "interrupt_exist_connections": false
+                    "type": "tun",
+                    "tag": "tun-in",
+                    "address": [
+                        "10.8.0.1/24"
+                    ],
+                    "mtu": 1500,
+                    "stack": "mixed",
+                    "auto_route": true,
+                    "strict_route": true
                 },
                 {
-                    "type": "urltest", "tag": "AUTO",
-                    "outbounds": [],   // 动态填充
-                    "url": "http://www.gstatic.com/generate_204",
-                    "interval": "10m",
-                    "tolerance": 50,
-                    "idle_timeout": "30m",
-                    "interrupt_exist_connections": false
-                },
-                {
-                    "type": "selector", "tag": "GLOBAL",
-                    "outbounds": ["PROXY", "DIRECT"],
-                    "default": "PROXY",
-                    "interrupt_exist_connections": false
-                },
-                {
-                    "type": "selector", "tag": "CN",
-                    "outbounds": ["DIRECT", "PROXY"],
-                    "default": "DIRECT",
-                    "interrupt_exist_connections": false
+                    "type": "mixed",
+                    "tag": "mixed-in",
+                    "listen": "127.0.0.1",
+                    "listen_port": 7890
                 }
             ],
+            "outbounds": [],
             "route": {
                 "default_domain_resolver": "alidns_udp",
                 "rules": [
-                    { "type": "logical", "mode": "or", "rules": [{ "port": 53 }, { "protocol": "dns" }], "action": "hijack-dns" },
-                    { "action": "sniff" },
-                    { "domain_suffix": ["miwifi.com"], "outbound": "DIRECT" },
-                    { "clash_mode": "direct", "outbound": "DIRECT" },
-                    { "clash_mode": "global", "outbound": "GLOBAL" },
-                    { "ip_is_private": true, "outbound": "DIRECT" },
-                    { "ip_cidr": ["198.18.0.0/15"], "outbound": "PROXY" },
-                    { "rule_set": ["geosite_adguard", "geosite-category-ads-all"], "action": "reject" },
-                    { "rule_set": "geosite-google", "outbound": "PROXY" },
-                    { "domain_suffix": ["steamserver.net", "zhihu.com", "zhimg.com", "jd.com", "360buyimg.com", "xfyun.cn"], "outbound": "DIRECT" },
-                    { "rule_set": "proxy", "outbound": "PROXY" },
-                    { "rule_set": "games", "outbound": "PROXY" },
-                    { "rule_set": "ai", "outbound": "PROXY" },
-                    { "rule_set": ["private", "cn", "microsoft-cn", "apple-cn", "google-cn", "games-cn", "networktest"], "outbound": "DIRECT" },
-                    { "action": "resolve" },
-                    { "rule_set": "telegramip", "outbound": "PROXY" },
-                    { "rule_set": "cnip", "outbound": "DIRECT" },
-                    { "package_name": ["com.google.android.youtube", "app.revanced.android.youtube"], "outbound": "PROXY" },
-                    { "package_name": ["org.telegram.messenger", "org.telegram.messenger.beta"], "outbound": "PROXY" }
+                    {
+                        "type": "logical",
+                        "mode": "or",
+                        "rules": [
+                            {
+                                "port": 53
+                            },
+                            {
+                                "protocol": "dns"
+                            }
+                        ],
+                        "action": "hijack-dns"
+                    },
+                    {
+                        "action": "sniff"
+                    },
+                    {
+                        "domain_suffix": [
+                            "miwifi.com"
+                        ],
+                        "outbound": "DIRECT"
+                    },
+                    {
+                        "clash_mode": "direct",
+                        "outbound": "DIRECT"
+                    },
+                    {
+                        "clash_mode": "global",
+                        "outbound": "GLOBAL"
+                    },
+                    {
+                        "ip_is_private": true,
+                        "outbound": "DIRECT"
+                    },
+                    {
+                        "ip_cidr": [
+                            "198.18.0.0/15"
+                        ],
+                        "outbound": "PROXY"
+                    },
+                    {
+                        "rule_set": [
+                            "geosite_adguard",
+                            "geosite-category-ads-all"
+                        ],
+                        "action": "reject"
+                    },
+                    {
+                        "rule_set": "geosite-google",
+                        "outbound": "PROXY"
+                    },
+                    {
+                        "domain_suffix": [
+                            "steamserver.net",
+                            "zhihu.com",
+                            "zhimg.com",
+                            "jd.com",
+                            "360buyimg.com",
+                            "xfyun.cn"
+                        ],
+                        "outbound": "DIRECT"
+                    },
+                    {
+                        "rule_set": "proxy",
+                        "outbound": "PROXY"
+                    },
+                    {
+                        "rule_set": "games",
+                        "outbound": "PROXY"
+                    },
+                    {
+                        "rule_set": "ai",
+                        "outbound": "PROXY"
+                    },
+                    {
+                        "rule_set": [
+                            "private",
+                            "cn",
+                            "microsoft-cn",
+                            "apple-cn",
+                            "google-cn",
+                            "games-cn",
+                            "networktest"
+                        ],
+                        "outbound": "DIRECT"
+                    },
+                    {
+                        "action": "resolve"
+                    },
+                    {
+                        "rule_set": "telegramip",
+                        "outbound": "PROXY"
+                    },
+                    {
+                        "rule_set": "cnip",
+                        "outbound": "DIRECT"
+                    },
+                    {
+                        "package_name": [
+                            "com.google.android.youtube",
+                            "app.revanced.android.youtube"
+                        ],
+                        "outbound": "PROXY"
+                    },
+                    {
+                        "package_name": [
+                            "org.telegram.messenger",
+                            "org.telegram.messenger.beta"
+                        ],
+                        "outbound": "PROXY"
+                    }
                 ],
                 "rule_set": [
-                    { "tag": "geosite-category-ads-all", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-category-ads-all.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "geosite_adguard", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/217heidai/adblockfilters@main/rules/adblocksingbox.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "geosite-google", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-google.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "proxy", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/proxy.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "games", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "ai", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ai.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "private", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/private.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "cn", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "microsoft-cn", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/microsoft-cn.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "apple-cn", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/apple-cn.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "google-cn", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/google-cn.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "games-cn", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games-cn.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "networktest", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/networktest.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "telegramip", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/telegramip.srs", "download_detour": "PROXY", "update_interval": "48h" },
-                    { "tag": "cnip", "type": "remote", "format": "binary", "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs", "download_detour": "PROXY", "update_interval": "48h" }
+                    {
+                        "tag": "geosite-category-ads-all",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-category-ads-all.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "geosite_adguard",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/217heidai/adblockfilters@main/rules/adblocksingbox.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "geosite-google",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/SagerNet/sing-geosite@rule-set/geosite-google.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "proxy",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/proxy.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "games",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "ai",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/ai.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "private",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/private.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "cn",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cn.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "microsoft-cn",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/microsoft-cn.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "apple-cn",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/apple-cn.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "google-cn",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/google-cn.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "games-cn",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/games-cn.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "networktest",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/networktest.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "telegramip",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/telegramip.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    },
+                    {
+                        "tag": "cnip",
+                        "type": "remote",
+                        "format": "binary",
+                        "url": "https://cdn.jsdelivr.net/gh/DustinWin/ruleset_geodata@sing-box-ruleset/cnip.srs",
+                        "download_detour": "PROXY",
+                        "update_interval": "48h"
+                    }
                 ],
                 "final": "PROXY",
                 "auto_detect_interface": true
@@ -229,16 +497,23 @@
                     "secret": "kSDuU2WHyf72taGMdDS0ib6klwFVF5QIM4HGhS5f4Jw=",
                     "default_mode": "rule"
                 },
-                "cache_file": { "enabled": true, "path": "cache.db", "cache_id": "cinchov", "store_fakeip": true }
+                "cache_file": {
+                    "enabled": true,
+                    "path": "cache.db",
+                    "cache_id": "cinchov",
+                    "store_fakeip": true
+                }
             }
         };
 
-        // ---------- 辅助：唯一标签 (自动去重) ----------
+        // ---------- 辅助：生成唯一标签 (自动去重) ----------
         function makeUniqueTag(baseName, usedTags) {
             let candidate = baseName;
             if (!candidate) candidate = 'node';
+            // 清理非法字符 (只保留字母数字中文 - _ .)
             candidate = candidate.replace(/[^\w\u4e00-\u9fa5\-_.]/g, '_').substring(0, 30);
             if (!candidate) candidate = 'node';
+            
             let finalTag = candidate;
             let counter = 1;
             while (usedTags.has(finalTag)) {
@@ -249,7 +524,7 @@
             return finalTag;
         }
 
-        // ---------- 协议解析器 (同前，仅微调) ----------
+        // ---------- 协议解析器 (返回节点对象，tag 由外部统一分配) ----------
         function parseVless(url) {
             let main = url.substring(8);
             let fragment = '';
@@ -285,9 +560,11 @@
                 type: 'vless',
                 server,
                 server_port: port,
-                uuid
+                uuid,
+                domain_resolver: 'alidns_udp'
             };
             if (flow) node.flow = flow;
+            
             if (type !== 'tcp') {
                 const transport = { type };
                 if (type === 'ws') { transport.path = path; if (host) transport.headers = { Host: host }; }
@@ -295,6 +572,7 @@
                 else if (type === 'httpupgrade') { transport.path = path; if (host) transport.host = host; }
                 node.transport = transport;
             }
+            
             if (security === 'tls') {
                 node.tls = { enabled: true, server_name: sni };
                 if (alpn) node.tls.alpn = alpn.split(',').map(s=>s.trim());
@@ -320,7 +598,8 @@
                 server_port: parseInt(vm.port) || 443,
                 uuid: vm.id,
                 security: vm.scy || 'auto',
-                alter_id: parseInt(vm.aid) || 0
+                alter_id: parseInt(vm.aid) || 0,
+                domain_resolver: 'alidns_udp'
             };
             const net = vm.net;
             if (net && net !== 'tcp') {
@@ -381,7 +660,8 @@
                 type: 'trojan',
                 server,
                 server_port: port,
-                password
+                password,
+                domain_resolver: 'alidns_udp'
             };
             if (type !== 'tcp') {
                 const transport = { type };
@@ -428,7 +708,8 @@
                 server,
                 server_port: port,
                 method,
-                password
+                password,
+                domain_resolver: 'alidns_udp'
             };
         }
 
@@ -468,6 +749,7 @@
                 server,
                 server_port: port,
                 password,
+                domain_resolver: 'alidns_udp',
                 tls: { enabled: true, server_name: sni, insecure }
             };
             if (obfs) {
@@ -493,17 +775,19 @@
             return null;
         }
 
-        // ---------- 核心：将节点注入模板 ----------
-        function injectNodesIntoTemplate(rawNodes) {
-            // 深拷贝模板
-            const config = JSON.parse(JSON.stringify(BASE_TEMPLATE));
-            
-            // 收集已用标签 (包括模板中固定的)
-            const usedTags = new Set();
-            config.outbounds.forEach(ob => usedTags.add(ob.tag));
-            
-            // 为每个节点分配唯一 tag，并收集节点对象
+        // ---------- 构建 outbounds (严格对齐1.13.9.txt模板结构与顺序) ----------
+        function buildOutbounds(rawNodes) {
+            // 保留标签：避免与系统内置tag冲突
+            const usedTags = new Set(['DIRECT', 'AUTO', 'PROXY', 'GLOBAL', 'CN']);
             const finalNodes = [];
+            
+            // 1. 内置DIRECT出站（与模板完全一致，无额外字段）
+            const directOutbound = {
+                "type": "direct",
+                "tag": "DIRECT"
+            };
+
+            // 2. 处理用户节点，生成唯一tag，与模板节点格式完全对齐
             for (let raw of rawNodes) {
                 const baseTag = raw._rawTag || 'node';
                 delete raw._rawTag;
@@ -512,21 +796,59 @@
                 finalNodes.push(raw);
             }
             
-            // 找到 AUTO (urltest) 的索引
-            const autoIndex = config.outbounds.findIndex(ob => ob.tag === 'AUTO');
-            if (autoIndex === -1) throw new Error('模板缺少 AUTO 组');
-            
-            // 更新 AUTO 的 outbounds 为所有节点标签
             const nodeTags = finalNodes.map(n => n.tag);
-            config.outbounds[autoIndex].outbounds = nodeTags;
+
+            // 3. PROXY选择器（与模板结构完全一致）
+            const proxySelector = {
+                "type": "selector",
+                "tag": "PROXY",
+                "outbounds": nodeTags.length > 0 ? ["AUTO", ...nodeTags, "DIRECT"] : ["DIRECT"],
+                "default": nodeTags.length > 0 ? "AUTO" : "DIRECT",
+                "interrupt_exist_connections": false
+            };
+
+            // 4. AUTO自动选优urltest（与模板参数完全一致）
+            const autoUrltest = {
+                "type": "urltest",
+                "tag": "AUTO",
+                "outbounds": nodeTags,
+                "url": "http://www.gstatic.com/generate_204",
+                "interval": "10m",
+                "tolerance": 50,
+                "idle_timeout": "30m",
+                "interrupt_exist_connections": false
+            };
+
+            // 5. GLOBAL选择器（与模板结构完全一致）
+            const globalSelector = {
+                "type": "selector",
+                "tag": "GLOBAL",
+                "outbounds": ["PROXY", "DIRECT"],
+                "default": "PROXY",
+                "interrupt_exist_connections": false
+            };
+
+            // 6. CN选择器（与模板结构完全一致）
+            const cnSelector = {
+                "type": "selector",
+                "tag": "CN",
+                "outbounds": ["DIRECT", "PROXY"],
+                "default": "DIRECT",
+                "interrupt_exist_connections": false
+            };
             
-            // 将节点对象插入到 AUTO 之前 (即 DIRECT 之后)
-            config.outbounds.splice(autoIndex, 0, ...finalNodes);
-            
-            return { config, nodeCount: finalNodes.length };
+            // 严格按照模板顺序拼接完整outbounds数组
+            return [
+                directOutbound,
+                proxySelector,
+                ...(nodeTags.length > 0 ? [autoUrltest] : []),
+                globalSelector,
+                cnSelector,
+                ...finalNodes
+            ];
         }
 
-        // ---------- UI ----------
+        // ---------- UI交互逻辑 ----------
         const inputArea = document.getElementById('inputArea');
         const outputPre = document.getElementById('outputConfig');
         const nodeBadge = document.getElementById('nodeCountBadge');
@@ -537,6 +859,7 @@
             setTimeout(() => feedbackDiv.innerHTML = '', 2500);
         }
 
+        // 解析生成配置
         document.getElementById('convertBtn').addEventListener('click', () => {
             try {
                 const raw = inputArea.value.trim();
@@ -548,47 +871,56 @@
                     if (node) rawNodes.push(node);
                 }
                 if (rawNodes.length === 0) throw new Error('未识别到有效节点');
-                
-                const { config, nodeCount } = injectNodesIntoTemplate(rawNodes);
+                const outbounds = buildOutbounds(rawNodes);
+                const config = JSON.parse(JSON.stringify(BASE_TEMPLATE));
+                config.outbounds = outbounds;
                 outputPre.textContent = JSON.stringify(config, null, 2);
-                nodeBadge.textContent = `${nodeCount} 个节点`;
-                showFeedback(`✅ 成功解析 ${nodeCount} 个节点`);
+                nodeBadge.textContent = `${rawNodes.length} 个节点`;
+                showFeedback(`✅ 成功解析 ${rawNodes.length} 个节点，配置已生成`);
             } catch (e) {
                 alert('转换失败: ' + e.message);
-                outputPre.textContent = '// 解析错误';
+                outputPre.textContent = '// 解析错误: ' + e.message;
                 nodeBadge.textContent = '0 个节点';
             }
         });
 
+        // 一键复制配置
         document.getElementById('copyBtn').addEventListener('click', async () => {
             const text = outputPre.textContent;
-            if (!text || text.startsWith('//')) { showFeedback('无内容'); return; }
+            if (!text || text.startsWith('//')) { showFeedback('无有效配置可复制'); return; }
             try {
                 await navigator.clipboard.writeText(text);
-                showFeedback('📋 配置已复制');
+                showFeedback('📋 配置已复制到剪贴板');
             } catch {
-                const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
-                ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+                const ta = document.createElement('textarea'); 
+                ta.value = text; 
+                document.body.appendChild(ta);
+                ta.select(); 
+                document.execCommand('copy'); 
+                document.body.removeChild(ta);
                 showFeedback('📋 复制成功');
             }
         });
 
+        // 清空输入输出
         document.getElementById('clearBtn').addEventListener('click', () => {
             inputArea.value = '';
             outputPre.textContent = '// 点击「解析并生成配置」后显示完整 JSON …';
             nodeBadge.textContent = '0 个节点';
+            feedbackDiv.innerHTML = '';
         });
 
-        const sampleText = `vless://a8ceaac6-bda6-459e-ace7-0b34c5873e1e@www.visa.com:443?type=ws&path=%2Fpkpk-vl&host=cvb.372164885.xyz&security=tls&sni=cvb.372164885.xyz&fp=chrome#🚀-Vless-WS
+        // 填入示例节点
+        const sampleText = `vless://a8ceaac6-bda6-459e-ace7-0b34c5873e1e@www.visa.com:443?type=ws&path=%2Fpkpk-vl&host=cvb.372164885.xyz&security=tls&sni=cvb.372164885.xyz&fp=chrome#🚀 CF-优选-Visa
 vmess://eyJ2IjogIjIiLCAicHMiOiAiVk1lc3MtV1MiLCAiYWRkIjogImV4YW1wbGUuY29tIiwgInBvcnQiOiA0NDMsICJpZCI6ICJhOGNlYWFjNi1iZGE2LTQ1OWUtYWNlNy0wYjM0YzU4NzNlMWUiLCAiYWlkIjogMCwgIm5ldCI6ICJ3cyIsICJ0eXBlIjogIm5vbmUiLCAiaG9zdCI6ICJleGFtcGxlLmNvbSIsICJwYXRoIjogIi93cyIsICJ0bHMiOiAidGxzIn0=
-trojan://password@trojan.example.com:443?sni=trojan.example.com#Trojan
-ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@1.2.3.4:8388#SS-01
-hysteria2://letmein@hy2.example.com:443?sni=hy2.example.com&insecure=0#Hysteria2`;
+trojan://password@trojan.example.com:443?sni=trojan.example.com#Trojan-Node
+ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@1.2.3.4:8388#SS-Node
+hysteria2://letmein@hy2.example.com:443?sni=hy2.example.com&insecure=0#Hysteria2-Node`;
         document.getElementById('sampleBtn').addEventListener('click', () => {
             inputArea.value = sampleText;
         });
 
-        // 初始空白
+        // 初始化状态
         inputArea.value = '';
         outputPre.textContent = '// 点击「解析并生成配置」后显示完整 JSON …';
         nodeBadge.textContent = '0 个节点';
