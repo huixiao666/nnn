@@ -76,7 +76,7 @@
 <body>
 <div class="container">
     <h1>🧬 多协议 → Sing-Box 1.13.9 配置生成</h1>
-    <div class="subtitle">VLESS · VMess · Trojan · SS · Hysteria2 · 标签自动去重 · 完整兼容1.13.9稳定版</div>
+    <div class="subtitle">VLESS · VMess · Trojan · SS · Hysteria2 · 标签自动去重 · 100%兼容1.13.9.txt官方模板</div>
     <div class="card">
         <div class="input-area">
             <div class="input-header">
@@ -109,13 +109,13 @@
         <div id="copyFeedback" style="height: 24px; margin-top: 8px;"></div>
     </div>
     <div class="footnote">
-        ⚡ 基于 1.13.9 稳定版官方模板 · 自动过滤无效传输配置 · 标签重复自动加序号 · 全字段严格对齐版本规范
+        ⚡ 100%对齐1.13.9.txt官方模板 · 自动过滤无效传输配置 · 标签重复自动加序号 · 全字段严格对齐版本规范
     </div>
 </div>
 <script>
     (function(){
         "use strict";
-        // ---------- 核心模板：1.13.9.txt 完整配置（仅outbounds动态生成） ----------
+        // ---------- 核心模板：100%复刻1.13.9.txt完整配置（仅outbounds动态生成） ----------
         const BASE_TEMPLATE = {
             "log": {
                 "level": "trace",
@@ -159,12 +159,7 @@
                             "tplogin.cn",
                             "router.asus.com",
                             "tendawifi.com",
-                            "tplinkwifi.net"
-                        ],
-                        "server": "local"
-                    },
-                    {
-                        "domain_suffix": [
+                            "tplinkwifi.net",
                             "app-measurement.com",
                             "hm.baidu.com",
                             "firebaselogging.googleapis.com",
@@ -172,9 +167,15 @@
                             "beacons.gvt2.com",
                             "beacons2.gvt2.com",
                             "beacons3.gvt2.com",
-                            "tracking.miui.com"
+                            "tracking.miui.com",
+                            "market.xiaomi.com",
+                            "lancache.steamcontent.com"
                         ],
                         "server": "alidns_udp"
+                    },
+                    {
+                        "domain_suffix": ["节点域名"],
+                        "server": "ggdns_doh"
                     },
                     {
                         "rule_set": [
@@ -200,13 +201,6 @@
                     },
                     {
                         "domain_suffix": [
-                            "market.xiaomi.com",
-                            "lancache.steamcontent.com"
-                        ],
-                        "server": "alidns_udp"
-                    },
-                    {
-                        "domain_suffix": [
                             "play.google.com",
                             "ggpht.com",
                             "googleusercontent.com",
@@ -223,7 +217,7 @@
                         "server": "fakeip"
                     }
                 ],
-                "final": "alidns_udp",
+                "final": "ggdns_doh",
                 "strategy": "ipv4_only",
                 "reverse_mapping": true,
                 "cache_capacity": 8000
@@ -274,6 +268,10 @@
                         "outbound": "DIRECT"
                     },
                     {
+                        "network_type": "cellular",
+                        "outbound": "DIRECT"
+                    },
+                    {
                         "clash_mode": "direct",
                         "outbound": "DIRECT"
                     },
@@ -299,10 +297,6 @@
                         "action": "reject"
                     },
                     {
-                        "rule_set": "geosite-google",
-                        "outbound": "PROXY"
-                    },
-                    {
                         "domain_suffix": [
                             "steamserver.net",
                             "zhihu.com",
@@ -314,21 +308,20 @@
                         "outbound": "DIRECT"
                     },
                     {
-                        "rule_set": "proxy",
-                        "outbound": "PROXY"
-                    },
-                    {
-                        "rule_set": "games",
-                        "outbound": "PROXY"
-                    },
-                    {
-                        "rule_set": "ai",
+                        "rule_set": [
+                            "geosite-google",
+                            "telegramip",
+                            "proxy",
+                            "games",
+                            "ai"
+                        ],
                         "outbound": "PROXY"
                     },
                     {
                         "rule_set": [
                             "private",
                             "cn",
+                            "cnip",
                             "microsoft-cn",
                             "apple-cn",
                             "google-cn",
@@ -341,22 +334,9 @@
                         "action": "resolve"
                     },
                     {
-                        "rule_set": "telegramip",
-                        "outbound": "PROXY"
-                    },
-                    {
-                        "rule_set": "cnip",
-                        "outbound": "DIRECT"
-                    },
-                    {
                         "package_name": [
                             "com.google.android.youtube",
-                            "app.revanced.android.youtube"
-                        ],
-                        "outbound": "PROXY"
-                    },
-                    {
-                        "package_name": [
+                            "app.revanced.android.youtube",
                             "org.telegram.messenger",
                             "org.telegram.messenger.beta"
                         ],
@@ -505,7 +485,6 @@
                 }
             }
         };
-
         // ---------- 辅助：生成唯一标签 (自动去重) ----------
         function makeUniqueTag(baseName, usedTags) {
             let candidate = baseName;
@@ -523,7 +502,6 @@
             usedTags.add(finalTag);
             return finalTag;
         }
-
         // ---------- 协议解析器 (返回节点对象，tag 由外部统一分配) ----------
         function parseVless(url) {
             let main = url.substring(8);
@@ -560,8 +538,7 @@
                 type: 'vless',
                 server,
                 server_port: port,
-                uuid,
-                domain_resolver: 'alidns_udp'
+                uuid
             };
             if (flow) node.flow = flow;
             
@@ -585,7 +562,6 @@
             }
             return node;
         }
-
         function parseVmess(url) {
             const b64 = url.substring(8);
             const jsonStr = atob(b64);
@@ -598,8 +574,7 @@
                 server_port: parseInt(vm.port) || 443,
                 uuid: vm.id,
                 security: vm.scy || 'auto',
-                alter_id: parseInt(vm.aid) || 0,
-                domain_resolver: 'alidns_udp'
+                alter_id: parseInt(vm.aid) || 0
             };
             const net = vm.net;
             if (net && net !== 'tcp') {
@@ -623,7 +598,6 @@
             }
             return node;
         }
-
         function parseTrojan(url) {
             let main = url.substring(9);
             let fragment = '';
@@ -660,8 +634,7 @@
                 type: 'trojan',
                 server,
                 server_port: port,
-                password,
-                domain_resolver: 'alidns_udp'
+                password
             };
             if (type !== 'tcp') {
                 const transport = { type };
@@ -673,7 +646,6 @@
             if (fp) node.tls.utls = { enabled: true, fingerprint: fp };
             return node;
         }
-
         function parseShadowsocks(url) {
             let main = url.substring(5);
             let fragment = '';
@@ -708,11 +680,9 @@
                 server,
                 server_port: port,
                 method,
-                password,
-                domain_resolver: 'alidns_udp'
+                password
             };
         }
-
         function parseHysteria2(url) {
             let u = url.startsWith('hysteria2://') ? url : url.replace('hy2://', 'hysteria2://');
             let main = u.substring(12);
@@ -749,7 +719,6 @@
                 server,
                 server_port: port,
                 password,
-                domain_resolver: 'alidns_udp',
                 tls: { enabled: true, server_name: sni, insecure }
             };
             if (obfs) {
@@ -758,7 +727,6 @@
             }
             return node;
         }
-
         function parseLine(line) {
             line = line.trim();
             if (!line) return null;
@@ -774,7 +742,6 @@
             }
             return null;
         }
-
         // ---------- 构建 outbounds (严格对齐1.13.9.txt模板结构与顺序) ----------
         function buildOutbounds(rawNodes) {
             // 保留标签：避免与系统内置tag冲突
@@ -786,7 +753,6 @@
                 "type": "direct",
                 "tag": "DIRECT"
             };
-
             // 2. 处理用户节点，生成唯一tag，与模板节点格式完全对齐
             for (let raw of rawNodes) {
                 const baseTag = raw._rawTag || 'node';
@@ -797,8 +763,7 @@
             }
             
             const nodeTags = finalNodes.map(n => n.tag);
-
-            // 3. PROXY选择器（与模板结构完全一致）
+            // 3. PROXY选择器（与模板结构、参数完全一致）
             const proxySelector = {
                 "type": "selector",
                 "tag": "PROXY",
@@ -806,19 +771,17 @@
                 "default": nodeTags.length > 0 ? "AUTO" : "DIRECT",
                 "interrupt_exist_connections": false
             };
-
-            // 4. AUTO自动选优urltest（与模板参数完全一致）
+            // 4. AUTO自动选优urltest（与模板参数100%一致）
             const autoUrltest = {
                 "type": "urltest",
                 "tag": "AUTO",
                 "outbounds": nodeTags,
-                "url": "http://www.gstatic.com/generate_204",
+                "url": "http://cp.cloudflare.com/",
                 "interval": "10m",
                 "tolerance": 50,
                 "idle_timeout": "30m",
                 "interrupt_exist_connections": false
             };
-
             // 5. GLOBAL选择器（与模板结构完全一致）
             const globalSelector = {
                 "type": "selector",
@@ -827,7 +790,6 @@
                 "default": "PROXY",
                 "interrupt_exist_connections": false
             };
-
             // 6. CN选择器（与模板结构完全一致）
             const cnSelector = {
                 "type": "selector",
@@ -837,7 +799,7 @@
                 "interrupt_exist_connections": false
             };
             
-            // 严格按照模板顺序拼接完整outbounds数组
+            // 严格按照1.13.9.txt模板顺序拼接完整outbounds数组
             return [
                 directOutbound,
                 proxySelector,
@@ -847,7 +809,6 @@
                 ...finalNodes
             ];
         }
-
         // ---------- UI交互逻辑 ----------
         const inputArea = document.getElementById('inputArea');
         const outputPre = document.getElementById('outputConfig');
@@ -858,7 +819,6 @@
             feedbackDiv.innerHTML = `<span class="toast-msg">${msg}</span>`;
             setTimeout(() => feedbackDiv.innerHTML = '', 2500);
         }
-
         // 解析生成配置
         document.getElementById('convertBtn').addEventListener('click', () => {
             try {
@@ -874,6 +834,11 @@
                 const outbounds = buildOutbounds(rawNodes);
                 const config = JSON.parse(JSON.stringify(BASE_TEMPLATE));
                 config.outbounds = outbounds;
+                // 自动替换节点域名解析规则
+                const nodeDomains = [...new Set(rawNodes.map(n => n.tls?.server_name).filter(Boolean))];
+                if (nodeDomains.length > 0) {
+                    config.dns.rules.find(r => r.domain_suffix?.includes("节点域名")).domain_suffix = nodeDomains;
+                }
                 outputPre.textContent = JSON.stringify(config, null, 2);
                 nodeBadge.textContent = `${rawNodes.length} 个节点`;
                 showFeedback(`✅ 成功解析 ${rawNodes.length} 个节点，配置已生成`);
@@ -883,7 +848,6 @@
                 nodeBadge.textContent = '0 个节点';
             }
         });
-
         // 一键复制配置
         document.getElementById('copyBtn').addEventListener('click', async () => {
             const text = outputPre.textContent;
@@ -901,7 +865,6 @@
                 showFeedback('📋 复制成功');
             }
         });
-
         // 清空输入输出
         document.getElementById('clearBtn').addEventListener('click', () => {
             inputArea.value = '';
@@ -909,9 +872,9 @@
             nodeBadge.textContent = '0 个节点';
             feedbackDiv.innerHTML = '';
         });
-
         // 填入示例节点
-        const sampleText = `vless://a8ceaac6-bda6-459e-ace7-0b34c5873e1e@www.visa.com:443?type=ws&path=%2Fpkpk-vl&host=cvb.372164885.xyz&security=tls&sni=cvb.372164885.xyz&fp=chrome#🚀 CF-优选-Visa
+        const sampleText = `vless://a8ceaac6-bda6-459e-ace7-0b34c5873e1e@www.visa.com:443?type=ws&path=%2F路径&host=节点域名&security=tls&sni=节点域名&fp=chrome#🚀 CF-优选-Visa
+vless://a8ceaac6-bda6-459e-ace7-0b34c5873e1e@www.digitalocean.com:443?type=ws&path=%2F路径&host=节点域名&security=tls&sni=节点域名&fp=chrome#🚀 CF-优选-DO
 vmess://eyJ2IjogIjIiLCAicHMiOiAiVk1lc3MtV1MiLCAiYWRkIjogImV4YW1wbGUuY29tIiwgInBvcnQiOiA0NDMsICJpZCI6ICJhOGNlYWFjNi1iZGE2LTQ1OWUtYWNlNy0wYjM0YzU4NzNlMWUiLCAiYWlkIjogMCwgIm5ldCI6ICJ3cyIsICJ0eXBlIjogIm5vbmUiLCAiaG9zdCI6ICJleGFtcGxlLmNvbSIsICJwYXRoIjogIi93cyIsICJ0bHMiOiAidGxzIn0=
 trojan://password@trojan.example.com:443?sni=trojan.example.com#Trojan-Node
 ss://YWVzLTI1Ni1nY206cGFzc3dvcmQ=@1.2.3.4:8388#SS-Node
@@ -919,7 +882,6 @@ hysteria2://letmein@hy2.example.com:443?sni=hy2.example.com&insecure=0#Hysteria2
         document.getElementById('sampleBtn').addEventListener('click', () => {
             inputArea.value = sampleText;
         });
-
         // 初始化状态
         inputArea.value = '';
         outputPre.textContent = '// 点击「解析并生成配置」后显示完整 JSON …';
